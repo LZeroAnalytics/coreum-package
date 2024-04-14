@@ -27,6 +27,10 @@ def run(plan, args):
         }
     )
 
+    files = {
+        "/tmp/genesis.json": genesis_file,
+    }
+
     for (participant,i) in participants:
         node_count = participant["count"]
 
@@ -39,6 +43,7 @@ def run(plan, args):
             name = node_name,
             image = participant['image'],
             cmd = ["/bin/sh", "-c", init_cmd],
+            files = files,
             ports = {
                 "rcp": PortSpec(number = 26656, transport_protocol = "TCP"),
                 "p2p": PortSpec(number = 26657, transport_protocol = "TCP"),
@@ -52,26 +57,15 @@ def run(plan, args):
 
         # Replace the genesis.json file
         genesis_path = "/root/.core/{0}/config/genesis.json".format(chain_id)
-        # TODO plan.upload_data_to_service(node_service, genesis_file, genesis_path)
+        move_command = "mv -f /tmp/genesis.json " + genesis_path
+        plan.exec(
+            service_name = node_name,
+            recipe = ExecRecipe(
+                command=["/bin/sh", "-c", move_command]
+            )
+        )
 
         start_cmd = "cored start --chain-id " + chain_id
         plan.exec_command(node_service, ["/bin/sh", "-c", start_cmd])
 
         plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
-
-    # Calculate genesis time
-    # 2022-06-27T12:00:00Z
-
-    # Chain ID
-    # coreum-devnet-1
-
-    # Min Deposit GOV
-    # 4000000000
-
-    # Voting period
-    # 4h
-
-    # Min self delegation
-    # 20000000000
-
-    # FaucetAmount
