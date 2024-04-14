@@ -31,10 +31,10 @@ def run(plan, args):
         "/tmp/genesis.json": genesis_file,
     }
 
-    for (participant,i) in participants:
+    for i, participant in enumerate(participants):
         node_count = participant["count"]
 
-        node_name = f"node{i+1}"
+        node_name = "node{0}".format(i + 1)
 
         # Initialize the node
         plan.print(f"Initialising {node_name}")
