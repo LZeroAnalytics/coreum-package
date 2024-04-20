@@ -33,7 +33,7 @@ def run(plan, args):
     addresses = []
 
     genesis_service = plan.add_service(
-        name = "genesis_service",
+        name = "genesis-service",
         config = ServiceConfig(
             image="tiljordan/coreum-cored:latest",
             files=files,
