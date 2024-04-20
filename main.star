@@ -20,7 +20,7 @@ def run(plan, args):
     genesis_file = plan.render_templates(
         config = {
             "genesis.json": struct(
-                template = read_file("github.com/LZeroAnalytics/coreum-package/templates/genesis.json.tmpl"),
+                template = read_file("templates/genesis.json.tmpl"),
                 data = genesis_data
             )
         }
