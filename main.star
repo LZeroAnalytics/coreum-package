@@ -51,7 +51,7 @@ def run(plan, args):
 
     init_cmd = "cored init node1 --chain-id {0}".format(chain_id)
     plan.exec(
-        service_name = "genesis_service",
+        service_name = "genesis-service",
         recipe = ExecRecipe(
             command=["/bin/sh", "-c", init_cmd]
         )
@@ -61,7 +61,7 @@ def run(plan, args):
     genesis_path = "/root/.core/{0}/config/genesis.json".format(chain_id)
     move_command = "mv -f /tmp/genesis/genesis.json " + genesis_path
     plan.exec(
-        service_name = "genesis_service",
+        service_name = "genesis-service",
         recipe = ExecRecipe(
             command=["/bin/sh", "-c", move_command]
         )
