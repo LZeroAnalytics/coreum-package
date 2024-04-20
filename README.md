@@ -97,5 +97,4 @@ Check out the full list of CLI commands [here](https://docs.kurtosis.com/cli)
 [docker-installation]: https://docs.docker.com/get-docker/
 [kurtosis-cli-installation]: https://docs.kurtosis.com/install
 [kurtosis-repo]: https://github.com/kurtosis-tech/kurtosis
-[enclave]: https://docs.kurtosis.com/advanced-concepts/enclaves/
 [package-reference]: https://docs.kurtosis.com/advanced-concepts/packages
