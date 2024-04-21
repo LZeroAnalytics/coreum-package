@@ -30,8 +30,6 @@ def run(plan, args):
         "/tmp/genesis": genesis_file,
     }
 
-    addresses = []
-
     genesis_service = plan.add_service(
         name = "genesis-service",
         config = ServiceConfig(
@@ -67,17 +65,71 @@ def run(plan, args):
         )
     )
 
-    # TODO: Generate all validator keys and save seed + address
-    # TODO: Run cored genesis add-genesis-account to add accounts to genesis
-    # TODO: Run gentx for each validator and run collect-gentxs to get genesis file
-    # validator_command = "cored genesis gentx validator0 4000000000udevcore --account-number 0 --chain-id coreum-devnet-1"
-    # plan.exec(
-    #     service_name = node_name,
-    #     recipe = ExecRecipe(
-    #         command=["/bin/sh", "-c", validator_command]
-    #     )
-    # )
-    # TODO: Export genesis file
+    total_count = 0
+    for participant in participants:
+        total_count += participant["count"]
+
+    plan.print("Creating a total of {0} validators".format(total_count))
+
+    addresses = []
+    mnemonics = []
+    for i in range(total_count):
+        # Add validator key
+        keys_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored keys add validator{0} --chain-id {1} --output json".format(i, chain_id)
+        key_result = plan.exec(
+            service_name = "genesis-service",
+            recipe = ExecRecipe(
+                command=["/bin/sh", "-c", keys_command],
+                extract={
+                    "validator_address": "fromjson | .address",
+                    "mnemonic": "fromjson | .mnemonic"
+                }
+            )
+        )
+
+        key_address = key_result["extract.validator_address"]
+        mnemonic = key_result["extract.mnemonic"]
+        plan.print("Extracted mnemonic: {0}".format(mnemonic))
+        addresses.append(key_address)
+        mnemonics.append(mnemonic)
+
+
+    balance = "100000000000udevcore"
+    for address in addresses:
+        add_account_command = "cored genesis add-genesis-account {0} {1} --chain-id {2}".format(address, balance, chain_id)
+        plan.exec(
+            service_name="genesis-service",
+            recipe=ExecRecipe(
+                command=["/bin/sh", "-c", add_account_command]
+            )
+        )
+
+    for i, address in enumerate(addresses):
+        # Amount to bond
+        amount = "4000000000udevcore"
+        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --chain-id {2}".format(i, amount, chain_id)
+        plan.exec(
+            service_name="genesis-service",
+            recipe=ExecRecipe(
+                command=["/bin/sh", "-c", gentx_command]
+            )
+        )
+
+    # Collect all gentxs
+    collect_gentxs_command = "cored genesis collect-gentxs --chain-id {0}".format(chain_id)
+    plan.exec(
+        service_name="genesis-service",
+        recipe=ExecRecipe(
+            command=["/bin/sh", "-c", collect_gentxs_command]
+        )
+    )
+
+    # Export
+    store_genesis = plan.store_service_files(
+        service_name = "genesis-service",
+        src = "/root/.core/{0}/config/genesis.json".format(chain_id),
+        name = "genesis-file"
+    )
 
     for i, participant in enumerate(participants):
         node_count = participant["count"]
@@ -105,22 +157,6 @@ def run(plan, args):
                 )
             )
 
-            # Add validator key
-            plan.print("Adding validator keys for node {0}.".format(node_name))
-            keys_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored keys add validator{0} --chain-id coreum-devnet-1 --output json".format(i + j)
-            key_result = plan.exec(
-                service_name=node_name,
-                recipe=ExecRecipe(
-                    command=["/bin/sh", "-c", keys_command],
-                    extract={
-                        "validator_address": "fromjson | .address"
-                    }
-                )
-            )
-
-            address = key_result["extract.validator_address"]
-            addresses.append(address)
-
             # Init the Coreum node
             plan.print("Initialising " + node_name)
             init_cmd = "cored init {0} --chain-id {1}".format(node_name, chain_id)
@@ -131,7 +167,7 @@ def run(plan, args):
                 )
             )
 
-            #TODO Peering
+            # TODO Peering
 
             # TODO: Start each node
             # start_cmd = "cored start --chain-id " + chain_id
@@ -142,4 +178,4 @@ def run(plan, args):
             #     )
             # )
 
-    plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
+            plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
