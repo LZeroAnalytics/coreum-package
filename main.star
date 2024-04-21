@@ -8,6 +8,8 @@ def run(plan, args):
     voting_period = args["voting_period"]
     participants = args["participants"]
 
+    KEY_PASSWORD = "LZeroPassword!"
+
     genesis_data = {
         "ChainID": chain_id,
         "GenesisTime": genesis_time,
@@ -34,16 +36,7 @@ def run(plan, args):
         name = "genesis-service",
         config = ServiceConfig(
             image="tiljordan/coreum-cored:latest",
-            files=files,
-            # ports = {
-            #     "rcp": PortSpec(number = 26656, transport_protocol = "TCP"),
-            #     "p2p": PortSpec(number = 26657, transport_protocol = "TCP"),
-            #     "grpc": PortSpec(number = 9090, transport_protocol = "TCP"),
-            #     "grpcWeb": PortSpec(number = 9091, transport_protocol = "TCP"),
-            #     "api": PortSpec(number = 1317, transport_protocol = "TCP"),
-            #     "pProf": PortSpec(number = 6060, transport_protocol = "TCP"),
-            #     "prometheus": PortSpec(number = 26660, transport_protocol = "TCP")
-            # }
+            files=files
         )
     )
 
@@ -55,7 +48,7 @@ def run(plan, args):
         )
     )
 
-    # #Replace the genesis.json file
+    # Replace the genesis.json file
     genesis_path = "/root/.core/{0}/config/genesis.json".format(chain_id)
     move_command = "mv -f /tmp/genesis/genesis.json " + genesis_path
     plan.exec(
@@ -75,7 +68,7 @@ def run(plan, args):
     mnemonics = []
     for i in range(total_count):
         # Add validator key
-        keys_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored keys add validator{0} --chain-id {1} --output json".format(i, chain_id)
+        keys_command = "echo -e '{0}\n{0}' | cored keys add validator{1} --chain-id {2} --output json".format(KEY_PASSWORD, i, chain_id)
         key_result = plan.exec(
             service_name = "genesis-service",
             recipe = ExecRecipe(
@@ -106,8 +99,8 @@ def run(plan, args):
 
     for i, address in enumerate(addresses):
         # Amount to bond
-        amount = "4000000000udevcore"
-        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --chain-id {2}".format(i, amount, chain_id)
+        amount = "20000000000udevcore"
+        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --chain-id {3}".format(i, amount, min_self_delegation, chain_id)
         plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
@@ -131,6 +124,10 @@ def run(plan, args):
         name = "genesis-file"
     )
 
+    node_files = {
+        "/tmp/genesis": store_genesis,
+    }
+
     for i, participant in enumerate(participants):
         node_count = participant["count"]
 
@@ -144,7 +141,7 @@ def run(plan, args):
                 name = node_name,
                 config = ServiceConfig(
                     image=participant['image'],
-                    files={},
+                    files=node_files,
                     # ports = {
                     #     "rcp": PortSpec(number = 26656, transport_protocol = "TCP"),
                     #     "p2p": PortSpec(number = 26657, transport_protocol = "TCP"),
@@ -167,15 +164,33 @@ def run(plan, args):
                 )
             )
 
-            # TODO Peering
+            # Use the preconfigured genesis file
+            plan.exec(
+                service_name = node_name,
+                recipe = ExecRecipe(
+                    command=["/bin/sh", "-c", move_command]
+                )
+            )
 
-            # TODO: Start each node
-            # start_cmd = "cored start --chain-id " + chain_id
-            # plan.exec(
-            #     service_name = node_name,
-            #     recipe = ExecRecipe(
-            #         command = ["/bin/sh", "-c", start_cmd]
-            #     )
-            # )
+            # Recreate keys on the node
+            mnemonic = mnemonics[i + j]
+            recover_key_command = "echo -e '{0}\n{1}\n{1}' | cored keys add validator{2} --recover --chain-id {3}".format(mnemonic, KEY_PASSWORD, i + j, chain_id)
+            plan.exec(
+                service_name = node_name,
+                recipe = ExecRecipe(
+                    command=["/bin/sh", "-c", recover_key_command]
+                )
+            )
 
-            plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
+
+    # TODO Peering
+    # TODO: Start each node
+    # start_cmd = "cored start --chain-id " + chain_id
+    # plan.exec(
+    #     service_name = node_name,
+    #     recipe = ExecRecipe(
+    #         command = ["/bin/sh", "-c", start_cmd]
+    #     )
+    # )
+
+    # plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
