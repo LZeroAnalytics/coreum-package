@@ -100,7 +100,18 @@ def run(plan, args):
     for i, address in enumerate(addresses):
         # Amount to bond
         amount = "20000000000udevcore"
-        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --chain-id {3}".format(i, amount, min_self_delegation, chain_id)
+        filename = "gentx-validator{0}.json".format(i)
+
+        # Create gentx directory
+        plan.exec(
+            service_name = "genesis-service",
+            recipe = ExecRecipe(
+                command = ["/bin/sh", "-c", "mkdir -p /root/.core/{0}/config/gentx/".format(chain_id)]
+            )
+        )
+
+        # Create genesis transactions for validators
+        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --output-document /root/.core/{3}/config/gentx/{4} --chain-id {3}".format(i, amount, min_self_delegation, chain_id, filename)
         plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
@@ -128,29 +139,34 @@ def run(plan, args):
         "/tmp/genesis": store_genesis,
     }
 
+    node_names = []
+    seed_info = ""
+    node_id = ""
+    node_service= ""
     for i, participant in enumerate(participants):
         node_count = participant["count"]
 
         for j in range(node_count):
 
             node_name = "node{0}".format(i + j + 1)
+            node_names.append(node_name)
 
             # Start the node service
             plan.print("Starting node service " + node_name)
-            plan.add_service(
+            node_service = plan.add_service(
                 name = node_name,
                 config = ServiceConfig(
                     image=participant['image'],
                     files=node_files,
-                    # ports = {
-                    #     "rcp": PortSpec(number = 26656, transport_protocol = "TCP"),
-                    #     "p2p": PortSpec(number = 26657, transport_protocol = "TCP"),
-                    #     "grpc": PortSpec(number = 9090, transport_protocol = "TCP"),
-                    #     "grpcWeb": PortSpec(number = 9091, transport_protocol = "TCP"),
-                    #     "api": PortSpec(number = 1317, transport_protocol = "TCP"),
-                    #     "pProf": PortSpec(number = 6060, transport_protocol = "TCP"),
-                    #     "prometheus": PortSpec(number = 26660, transport_protocol = "TCP")
-                    # }
+                    ports = {
+                        "p2p": PortSpec(number = 26656, transport_protocol = "TCP", wait = None),
+                        "rcp": PortSpec(number = 26657, transport_protocol = "TCP", wait = None),
+                        "grpc": PortSpec(number = 9090, transport_protocol = "TCP", wait = None),
+                        "grpcWeb": PortSpec(number = 9091, transport_protocol = "TCP", wait = None),
+                        "api": PortSpec(number = 1317, transport_protocol = "TCP", wait = None),
+                        "pProf": PortSpec(number = 6060, transport_protocol = "TCP", wait = None),
+                        "prometheus": PortSpec(number = 26660, transport_protocol = "TCP", wait = None)
+                    }
                 )
             )
 
@@ -182,15 +198,62 @@ def run(plan, args):
                 )
             )
 
+            # Build persistent peers string
+            if i == 0 and j == 0:
+                # Get node id for peering
+                node_id = plan.exec(
+                    service_name = node_name,
+                    recipe = ExecRecipe(
+                        command = ["/bin/sh", "-c", "cored tendermint show-node-id --chain-id " + chain_id]
+                    )
+                )
 
-    # TODO Peering
-    # TODO: Start each node
-    # start_cmd = "cored start --chain-id " + chain_id
-    # plan.exec(
-    #     service_name = node_name,
-    #     recipe = ExecRecipe(
-    #         command = ["/bin/sh", "-c", start_cmd]
-    #     )
-    # )
+    plan.print("Peering nodes with the following seed: " + seed_info)
+    for (i, node_name) in enumerate(node_names):
 
-    # plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
+        if i == 0:
+            update_seed_command = "sed -i 's/seeds = \"[^\"]*\"/seeds = \"\"/' /root/.core/{0}/config/config.toml".format(chain_id)
+            plan.print("Executing first seed command: {0}".format(update_seed_command))
+        else:
+            # Use workaround for dealing with future references; Temp store variables and use to replace seed info
+            store_id_command = "echo '" + node_id["output"] + "' > /tmp/node_id"
+            store_ip_command = "echo '" + node_service.ip_address + "' > /tmp/node_ip"
+
+            # Execute storage commands
+            plan.exec(
+                service_name=node_name,
+                recipe=ExecRecipe(
+                    command=["/bin/sh", "-c", store_id_command]
+                )
+            )
+
+            plan.exec(
+                service_name=node_name,
+                recipe=ExecRecipe(
+                    command=["/bin/sh", "-c", store_ip_command]
+                )
+            )
+
+            update_seed_command = (
+                    "node_id=$(cat /tmp/node_id) && " +
+                    "node_ip=$(cat /tmp/node_ip) && " +
+                    "sed -i 's/^seeds = .*/seeds = '\"$node_id@$node_ip:26656\"'/' /root/.core/" + chain_id + "/config/config.toml"
+            )
+
+        plan.exec(
+            service_name = node_name,
+            recipe = ExecRecipe(
+                command = ["/bin/sh", "-c", update_seed_command]
+            )
+        )
+
+    # Start nodes
+    for node_name in node_names:
+        plan.exec(
+            service_name = node_name,
+            recipe = ExecRecipe(
+                command = ["/bin/sh", "-c", "cored start --chain-id " + chain_id]
+            )
+        )
+        plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
+
