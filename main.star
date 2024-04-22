@@ -82,7 +82,6 @@ def run(plan, args):
 
         key_address = key_result["extract.validator_address"]
         mnemonic = key_result["extract.mnemonic"]
-        plan.print("Extracted mnemonic: {0}".format(mnemonic))
         addresses.append(key_address)
         mnemonics.append(mnemonic)
 
@@ -110,8 +109,9 @@ def run(plan, args):
             )
         )
 
+        # TODO: Fix error of using the same public key for each validator; When using -pubkey flag get this error: secp256k1, expected: [ed25519]
         # Create genesis transactions for validators
-        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --output-document /root/.core/{3}/config/gentx/{4} --chain-id {3}".format(i, amount, min_self_delegation, chain_id, filename)
+        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --moniker '{5}' --output-document /root/.core/{3}/config/gentx/{4} --chain-id {3}".format(i, amount, min_self_delegation, chain_id, filename, "validator{0}".format(i))
         plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
