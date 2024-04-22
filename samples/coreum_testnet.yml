@@ -7,4 +7,4 @@ voting_period: 4h
 
 participants:
   - image: tiljordan/coreum-cored:latest
-    count: 1
+    count: 3
