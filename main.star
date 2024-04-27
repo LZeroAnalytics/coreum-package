@@ -191,8 +191,8 @@ def run(plan, args):
             )
 
             # Recreate keys on the node
-            mnemonic = mnemonics[i + j]
-            recover_key_command = "echo -e '{0}\n{1}\n{1}' | cored keys add validator{2} --recover --chain-id {3}".format(mnemonic, KEY_PASSWORD, i + j, chain_id)
+            mnemonic = mnemonics[counter - 1]
+            recover_key_command = "echo -e '{0}\n{1}\n{1}' | cored keys add validator{2} --recover --chain-id {3}".format(mnemonic, KEY_PASSWORD, counter - 1, chain_id)
             plan.exec(
                 service_name = node_name,
                 recipe = ExecRecipe(
