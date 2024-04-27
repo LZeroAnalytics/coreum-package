@@ -40,24 +40,6 @@ def run(plan, args):
         )
     )
 
-    init_cmd = "cored init node1 --chain-id {0}".format(chain_id)
-    plan.exec(
-        service_name = "genesis-service",
-        recipe = ExecRecipe(
-            command=["/bin/sh", "-c", init_cmd]
-        )
-    )
-
-    # Replace the genesis.json file
-    genesis_path = "/root/.core/{0}/config/genesis.json".format(chain_id)
-    move_command = "mv -f /tmp/genesis/genesis.json " + genesis_path
-    plan.exec(
-        service_name = "genesis-service",
-        recipe = ExecRecipe(
-            command=["/bin/sh", "-c", move_command]
-        )
-    )
-
     total_count = 0
     for participant in participants:
         total_count += participant["count"]
@@ -66,6 +48,7 @@ def run(plan, args):
 
     addresses = []
     mnemonics = []
+    pub_keys = []
     for i in range(total_count):
         # Add validator key
         keys_command = "echo -e '{0}\n{0}' | cored keys add validator{1} --chain-id {2} --output json".format(KEY_PASSWORD, i, chain_id)
@@ -85,6 +68,54 @@ def run(plan, args):
         addresses.append(key_address)
         mnemonics.append(mnemonic)
 
+        # Initialize genesis with mnemonic from previous key generation
+        init_command = "echo -e '{0}' | cored init validator{1} --chain-id {2} --recover".format(mnemonic, i, chain_id)
+        plan.exec(
+            service_name = "genesis-service",
+            recipe = ExecRecipe(
+                command = ["/bin/sh", "-c", init_command]
+            )
+        )
+
+        # Extract public key from the priv_validator_key.json file
+        extract_pubkey_command = "cat /root/.core/{0}/config/priv_validator_key.json".format(chain_id)
+        pubkey_result = plan.exec(
+            service_name = "genesis-service",
+            recipe = ExecRecipe(
+                command = ["/bin/sh", "-c", extract_pubkey_command],
+                extract = {
+                    "pub_key": "fromjson | .pub_key.value"
+                }
+            )
+        )
+        pubkey_json = '{"@type":"/cosmos.crypto.ed25519.PubKey", "key": "' + pubkey_result["extract.pub_key"] + '"}'
+        pub_keys.append(pubkey_json)
+
+        genesis_remove_command = "rm /root/.core/{0}/config/genesis.json".format(chain_id)
+        plan.exec(
+            service_name = "genesis-service",
+            recipe = ExecRecipe(
+                command = ["/bin/sh", "-c", genesis_remove_command]
+            )
+        )
+
+    init_cmd = "cored init node1 --chain-id {0}".format(chain_id)
+    plan.exec(
+        service_name = "genesis-service",
+        recipe = ExecRecipe(
+            command=["/bin/sh", "-c", init_cmd]
+        )
+    )
+
+    # Replace the genesis.json file
+    genesis_path = "/root/.core/{0}/config/genesis.json".format(chain_id)
+    move_command = "mv -f /tmp/genesis/genesis.json " + genesis_path
+    plan.exec(
+        service_name = "genesis-service",
+        recipe = ExecRecipe(
+            command=["/bin/sh", "-c", move_command]
+        )
+    )
 
     balance = "100000000000udevcore"
     for address in addresses:
@@ -100,6 +131,7 @@ def run(plan, args):
         # Amount to bond
         amount = "20000000000udevcore"
         filename = "gentx-validator{0}.json".format(i)
+        pub_key = pub_keys[i]
 
         # Create gentx directory
         plan.exec(
@@ -108,10 +140,8 @@ def run(plan, args):
                 command = ["/bin/sh", "-c", "mkdir -p /root/.core/{0}/config/gentx/".format(chain_id)]
             )
         )
-
-        # TODO: Fix error of using the same public key for each validator; When using -pubkey flag get this error: secp256k1, expected: [ed25519]
         # Create genesis transactions for validators
-        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --moniker '{5}' --output-document /root/.core/{3}/config/gentx/{4} --chain-id {3}".format(i, amount, min_self_delegation, chain_id, filename, "validator{0}".format(i))
+        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --moniker 'validator{0}' --output-document /root/.core/{3}/config/gentx/{4} --chain-id {3} --pubkey '{5}'".format(i, amount, min_self_delegation, chain_id, filename, pub_key)
         plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
@@ -142,16 +172,15 @@ def run(plan, args):
     node_names = []
     seed_info = ""
     node_id = ""
-    node_service= ""
-    counter = 1
+    first_node_service = ""
+    counter = 0
     for i, participant in enumerate(participants):
         node_count = participant["count"]
 
         for j in range(node_count):
 
-            node_name = "node{0}".format(counter)
+            node_name = "node{0}".format(counter + 1)
             node_names.append(node_name)
-            counter += 1
 
             # Start the node service
             plan.print("Starting node service " + node_name)
@@ -172,9 +201,19 @@ def run(plan, args):
                 )
             )
 
+            # Recreate keys on the node
+            mnemonic = mnemonics[counter]
+            recover_key_command = "echo -e '{0}\n{1}\n{1}' | cored keys add validator{2} --recover --chain-id {3}".format(mnemonic, KEY_PASSWORD, counter, chain_id)
+            plan.exec(
+                service_name = node_name,
+                recipe = ExecRecipe(
+                    command=["/bin/sh", "-c", recover_key_command]
+                )
+            )
+
             # Init the Coreum node
             plan.print("Initialising " + node_name)
-            init_cmd = "cored init {0} --chain-id {1}".format(node_name, chain_id)
+            init_cmd = "echo -e '{0}' | cored init validator{1} --chain-id {2} --recover".format(mnemonic, counter, chain_id)
             plan.exec(
                 service_name = node_name,
                 recipe = ExecRecipe(
@@ -190,18 +229,10 @@ def run(plan, args):
                 )
             )
 
-            # Recreate keys on the node
-            mnemonic = mnemonics[counter - 1]
-            recover_key_command = "echo -e '{0}\n{1}\n{1}' | cored keys add validator{2} --recover --chain-id {3}".format(mnemonic, KEY_PASSWORD, counter - 1, chain_id)
-            plan.exec(
-                service_name = node_name,
-                recipe = ExecRecipe(
-                    command=["/bin/sh", "-c", recover_key_command]
-                )
-            )
-
             # Build persistent peers string
             if i == 0 and j == 0:
+                # Store the first node service to later retrieve ip address
+                first_node_service = node_service
                 # Get node id for peering
                 node_id = plan.exec(
                     service_name = node_name,
@@ -209,6 +240,8 @@ def run(plan, args):
                         command = ["/bin/sh", "-c", "cored tendermint show-node-id --chain-id " + chain_id]
                     )
                 )
+
+            counter += 1
 
     plan.print("Peering nodes with the following seed: " + seed_info)
     for (i, node_name) in enumerate(node_names):
@@ -219,7 +252,7 @@ def run(plan, args):
         else:
             # Use workaround for dealing with future references; Temp store variables and use to replace seed info
             store_id_command = "echo '" + node_id["output"] + "' > /tmp/node_id"
-            store_ip_command = "echo '" + node_service.ip_address + "' > /tmp/node_ip"
+            store_ip_command = "echo '" + first_node_service.ip_address + "' > /tmp/node_ip"
 
             # Execute storage commands
             plan.exec(
@@ -239,7 +272,7 @@ def run(plan, args):
             update_seed_command = (
                     "node_id=$(cat /tmp/node_id) && " +
                     "node_ip=$(cat /tmp/node_ip) && " +
-                    "sed -i 's/^seeds = .*/seeds = '\"$node_id@$node_ip:26656\"'/' /root/.core/" + chain_id + "/config/config.toml"
+                    "sed -i 's/^seeds = .*/seeds = \"'$node_id@$node_ip:26656'\"/' /root/.core/" + chain_id + "/config/config.toml"
             )
 
         plan.exec(
@@ -249,12 +282,24 @@ def run(plan, args):
             )
         )
 
-    # Start nodes
+        update_rpc_command = (
+                "sed -i 's|^laddr = \"tcp://127.0.0.1:26657\"|laddr = \"tcp://0.0.0.0:26657\"|' /root/.core/" + chain_id + "/config/config.toml"
+        )
+
+        plan.exec(
+            service_name = node_name,
+            recipe = ExecRecipe(
+                command = ["/bin/sh", "-c", update_rpc_command]
+            )
+        )
+
+
+# Start nodes
     for node_name in node_names:
         plan.exec(
             service_name = node_name,
             recipe = ExecRecipe(
-                command = ["/bin/sh", "-c", "cored start --chain-id " + chain_id]
+                command = ["/bin/sh", "-c", "nohup cored start --chain-id " + chain_id + " > /dev/null 2>&1 &"]
             )
         )
         plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
