@@ -143,13 +143,15 @@ def run(plan, args):
     seed_info = ""
     node_id = ""
     node_service= ""
+    counter = 1
     for i, participant in enumerate(participants):
         node_count = participant["count"]
 
         for j in range(node_count):
 
-            node_name = "node{0}".format(i + j + 1)
+            node_name = "node{0}".format(counter)
             node_names.append(node_name)
+            counter += 1
 
             # Start the node service
             plan.print("Starting node service " + node_name)
