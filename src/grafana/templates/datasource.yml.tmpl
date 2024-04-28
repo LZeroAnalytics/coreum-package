@@ -1,0 +1,17 @@
+apiVersion: 1
+
+deleteDatasources:
+  - name: Cosmos
+    orgId: 1
+
+datasources:
+  - name: Cosmos
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: {{ .PrometheusURL }}
+    isDefault: true
+    version: 1
+    editable: true
+    jsonData:
+      timeInterval: "5s"

@@ -1,4 +1,5 @@
 prometheus = import_module("./src/prometheus/prometheus_launcher.star")
+grafana = import_module("./src/grafana/grafana_launcher.star")
 
 def run(plan, args):
 
@@ -319,4 +320,7 @@ def run(plan, args):
         plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
 
     # Start prometheus service
-    prometheus.launch_prometheus(plan, node_names)
+    prometheus_url = prometheus.launch_prometheus(plan, node_names)
+
+    # Start grafana
+    grafana.launch_grafana(plan, prometheus_url)

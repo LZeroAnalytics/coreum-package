@@ -14,11 +14,6 @@ def launch_prometheus(plan, node_names):
     metrics_jobs = []
     for node_name in node_names:
         node_service = plan.get_service(name=node_name)
-        metrics_job = {
-            "name": node_service,
-            "url": "{0}:26660".format(node_service.ip_address),
-            "path": "/metrics"
-        }
         metrics_jobs.append(
             new_metrics_job(
                 job_name=node_name,
