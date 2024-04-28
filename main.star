@@ -1,3 +1,5 @@
+prometheus = import_module("./src/prometheus/prometheus_launcher.star")
+
 def run(plan, args):
 
     chain_id = args["chain_id"]
@@ -306,7 +308,7 @@ def run(plan, args):
         )
 
 
-# Start nodes
+    # Start nodes
     for node_name in node_names:
         plan.exec(
             service_name = node_name,
@@ -316,3 +318,5 @@ def run(plan, args):
         )
         plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
 
+    # Start prometheus service
+    prometheus.launch_prometheus(plan, node_names)
