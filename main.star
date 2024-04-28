@@ -282,14 +282,26 @@ def run(plan, args):
             )
         )
 
+        # Enable rcp access to nodes
         update_rpc_command = (
                 "sed -i 's|^laddr = \"tcp://127.0.0.1:26657\"|laddr = \"tcp://0.0.0.0:26657\"|' /root/.core/" + chain_id + "/config/config.toml"
         )
-
         plan.exec(
             service_name = node_name,
             recipe = ExecRecipe(
                 command = ["/bin/sh", "-c", update_rpc_command]
+            )
+        )
+
+        update_prometheus_command = (
+                "sed -i 's|^prometheus = false|prometheus = true|' /root/.core/" + chain_id + "/config/config.toml && " +
+                "sed -i 's|^prometheus_listen_addr = \":26660\"|prometheus_listen_addr = \"0.0.0.0:26660\"|' /root/.core/" + chain_id + "/config/config.toml"
+        )
+
+        plan.exec(
+            service_name=node_name,
+            recipe=ExecRecipe(
+                command=["/bin/sh", "-c", update_prometheus_command]
             )
         )
 
