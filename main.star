@@ -1,5 +1,6 @@
 prometheus = import_module("./src/prometheus/prometheus_launcher.star")
 grafana = import_module("./src/grafana/grafana_launcher.star")
+bdjuno = import_module("./src/bdjuno/bdjuno_launcher.star")
 
 def run(plan, args):
 
@@ -194,7 +195,7 @@ def run(plan, args):
                     files=node_files,
                     ports = {
                         "p2p": PortSpec(number = 26656, transport_protocol = "TCP", wait = None),
-                        "rcp": PortSpec(number = 26657, transport_protocol = "TCP", wait = None),
+                        "rpc": PortSpec(number = 26657, transport_protocol = "TCP", wait = None),
                         "grpc": PortSpec(number = 9090, transport_protocol = "TCP", wait = None),
                         "grpcWeb": PortSpec(number = 9091, transport_protocol = "TCP", wait = None),
                         "api": PortSpec(number = 1317, transport_protocol = "TCP", wait = None),
@@ -285,20 +286,9 @@ def run(plan, args):
             )
         )
 
-        # Enable rcp access to nodes
-        update_rpc_command = (
-                "sed -i 's|^laddr = \"tcp://127.0.0.1:26657\"|laddr = \"tcp://0.0.0.0:26657\"|' /root/.core/" + chain_id + "/config/config.toml"
-        )
-        plan.exec(
-            service_name = node_name,
-            recipe = ExecRecipe(
-                command = ["/bin/sh", "-c", update_rpc_command]
-            )
-        )
-
         update_prometheus_command = (
-                "sed -i 's|^prometheus = false|prometheus = true|' /root/.core/" + chain_id + "/config/config.toml && " +
-                "sed -i 's|^prometheus_listen_addr = \":26660\"|prometheus_listen_addr = \"0.0.0.0:26660\"|' /root/.core/" + chain_id + "/config/config.toml"
+            "sed -i 's|^prometheus = false|prometheus = true|' /root/.core/" + chain_id + "/config/config.toml && " +
+            "sed -i 's|^prometheus_listen_addr = \":26660\"|prometheus_listen_addr = \"0.0.0.0:26660\"|' /root/.core/" + chain_id + "/config/config.toml"
         )
 
         plan.exec(
@@ -314,7 +304,7 @@ def run(plan, args):
         plan.exec(
             service_name = node_name,
             recipe = ExecRecipe(
-                command = ["/bin/sh", "-c", "nohup cored start --chain-id " + chain_id + " > /dev/null 2>&1 &"]
+                command = ["/bin/sh", "-c", "nohup cored start --rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090 --chain-id " + chain_id + " > /dev/null 2>&1 &"]
             )
         )
         plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
@@ -324,3 +314,6 @@ def run(plan, args):
 
     # Start grafana
     grafana.launch_grafana(plan, prometheus_url)
+
+    # Start BDJuno explorer
+    bdjuno.launch_bdjuno(plan)

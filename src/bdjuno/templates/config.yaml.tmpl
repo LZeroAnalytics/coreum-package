@@ -1,0 +1,75 @@
+chain:
+    bech32_prefix: {{ .ChainPrefix }}
+    modules:
+        - telemetry
+        - modules
+        - messages
+        - auth
+        - bank
+        - consensus
+        - gov
+        - mint
+        - slashing
+        - staking
+        - distribution
+        - actions
+        - feemodel
+        - customparams
+        - assetft
+        - assetnft
+        - pricefeed
+        - addresses
+node:
+    type: remote
+    config:
+        rpc:
+            client_name: juno
+            address: http://{{ .NodeIP }}:{{ .RpcPort }}
+            max_connections: 20
+        grpc:
+            address: http://{{ .NodeIP }}:{{ .GrpcPort }}
+            insecure: true
+parsing:
+    workers: 20
+    listen_new_blocks: true
+    parse_old_blocks: true
+    parse_genesis: true
+    start_height: 1
+    fast_sync: false
+    average_block_time: 1s
+
+database:
+    url: postgresql://root:password@{{ .PostgresIP }}:{{ .PostgresPort }}/root?sslmode=disable&search_path=public
+    name: root
+    host: postgres
+    port: 5432
+    user: root
+    password: password
+    schema: public
+    max_open_connections: 20
+    max_idle_connections: 20
+    partition_size: 100000
+    partition_batch: 1000
+
+logging:
+    level: info
+    format: text
+
+telemetry:
+    port: 5000
+
+pruning:
+    keep_recent: 100
+    keep_every: 500
+    interval: 10
+
+actions:
+    port: 3000
+
+pricefeed:
+    tokens:
+        - name: udevcore
+          units:
+              - denom: devcore
+                exponent: 6
+                price_id: udevcore

@@ -1,0 +1,43 @@
+events {
+    worker_connections 1024;
+}
+
+http {
+    # Define upstream for GraphQL and WebSocket connections to Hasura
+    upstream hasura {
+        server {{ .HarusaIP }}:{{ .HarusaPort }};
+    }
+
+    # Define upstream for WebSocket connections to the node
+    upstream node_rpc {
+        server {{ .NodeIP }}:{{ .NodePort }};
+    }
+
+    server {
+        listen 80;
+
+        # Route HTTP and WebSocket requests for GraphQL
+        location /v1/graphql {
+            proxy_pass http://hasura;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+        }
+
+        # Route WebSocket requests for Node RPC
+        location /websocket {
+            proxy_pass http://node_rpc;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+
+        # Other configurations for the big-dipper UI
+        location / {
+            proxy_pass http://{{ .BdIP }}:{{ .BdPort }};
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+        }
+    }
+}
