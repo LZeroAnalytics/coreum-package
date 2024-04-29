@@ -22,8 +22,6 @@ def run(plan, args):
     }
 
     node_names = []
-    node_id = ""
-    first_node_service = ""
     counter = 0
     for i, participant in enumerate(participants):
         node_count = participant["count"]
@@ -82,56 +80,9 @@ def run(plan, args):
                 )
             )
 
-            if i == 0 and j == 0:
-                # Store the first node service to later retrieve ip address
-                first_node_service = node_service
-                # Get node id for peering
-                node_id = plan.exec(
-                    service_name = node_name,
-                    recipe = ExecRecipe(
-                        command = ["/bin/sh", "-c", "cored tendermint show-node-id --chain-id " + chain_id]
-                    )
-                )
-
             counter += 1
 
     for (i, node_name) in enumerate(node_names):
-
-        if i == 0:
-            update_seed_command = "sed -i 's/seeds = \"[^\"]*\"/seeds = \"\"/' /root/.core/{0}/config/config.toml".format(chain_id)
-            plan.print("Executing first seed command: {0}".format(update_seed_command))
-        else:
-            # Use workaround for dealing with future references; Temp store variables and use to replace seed info
-            store_id_command = "echo '" + node_id["output"] + "' > /tmp/node_id"
-            store_ip_command = "echo '" + first_node_service.ip_address + "' > /tmp/node_ip"
-
-            # Execute storage commands
-            plan.exec(
-                service_name=node_name,
-                recipe=ExecRecipe(
-                    command=["/bin/sh", "-c", store_id_command]
-                )
-            )
-
-            plan.exec(
-                service_name=node_name,
-                recipe=ExecRecipe(
-                    command=["/bin/sh", "-c", store_ip_command]
-                )
-            )
-
-            update_seed_command = (
-                    "node_id=$(cat /tmp/node_id) && " +
-                    "node_ip=$(cat /tmp/node_ip) && " +
-                    "sed -i 's/^seeds = .*/seeds = \"'$node_id@$node_ip:26656'\"/' /root/.core/" + chain_id + "/config/config.toml"
-            )
-
-        plan.exec(
-            service_name = node_name,
-            recipe = ExecRecipe(
-                command = ["/bin/sh", "-c", update_seed_command]
-            )
-        )
 
         update_prometheus_command = (
             "sed -i 's|^prometheus = false|prometheus = true|' /root/.core/" + chain_id + "/config/config.toml && " +
@@ -145,16 +96,36 @@ def run(plan, args):
             )
         )
 
+    node_id = plan.exec(
+        service_name = "node1",
+        recipe = ExecRecipe(
+            command = ["/bin/sh", "-c", "cored tendermint show-node-id --chain-id " + chain_id + " | tr -d '\n'"],
+            extract = {
+                "node_id" : "",
+            }
+        )
+    )
+
+    first_node_service = plan.get_service(name="node1")
 
     # Start nodes
-    for node_name in node_names:
+    for i, node_name in enumerate(node_names):
+
+        rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090 "
+        if i == 0:
+            seed_options = "--p2p.seeds ''"
+        else:
+            seed_options = "--p2p.seeds " + node_id["extract.node_id"] + "@" + first_node_service.ip_address + ":" + str(first_node_service.ports["p2p"].number)
+
+        start_command = "nohup cored start " + rpc_options + seed_options + " --chain-id " + chain_id + " > /dev/null 2>&1 &"
+
         plan.exec(
             service_name = node_name,
             recipe = ExecRecipe(
                 command = [
                     "/bin/sh",
                     "-c",
-                    "nohup cored start --rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090 --chain-id " + chain_id + " > /dev/null 2>&1 &"
+                    start_command
                 ]
             )
         )
