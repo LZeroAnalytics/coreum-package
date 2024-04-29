@@ -4,6 +4,7 @@ bdjuno = import_module("./src/bdjuno/bdjuno_launcher.star")
 
 def run(plan, args):
 
+    # Retrieve params from config file
     chain_id = args["chain_id"]
     genesis_time = args["genesis_time"]
     faucet_amount = args["faucet_amount"]
@@ -14,6 +15,7 @@ def run(plan, args):
 
     KEY_PASSWORD = "LZeroPassword!"
 
+    # Configure genesis data for template
     genesis_data = {
         "ChainID": chain_id,
         "GenesisTime": genesis_time,
@@ -23,6 +25,7 @@ def run(plan, args):
         "VotingPeriod": voting_period
     }
 
+    # Render genesis file with cuastom params
     genesis_file = plan.render_templates(
         config = {
             "genesis.json": struct(
@@ -36,7 +39,8 @@ def run(plan, args):
         "/tmp/genesis": genesis_file,
     }
 
-    genesis_service = plan.add_service(
+    # Start a genesis service to set up genesis file
+    plan.add_service(
         name = "genesis-service",
         config = ServiceConfig(
             image="tiljordan/coreum-cored:latest",
@@ -162,12 +166,15 @@ def run(plan, args):
         )
     )
 
-    # Export
+    # Export genesis file
     store_genesis = plan.store_service_files(
         service_name = "genesis-service",
         src = "/root/.core/{0}/config/genesis.json".format(chain_id),
         name = "genesis-file"
     )
+
+    # Remove genesis service after genesis file is exported
+    plan.remove_service(name = "genesis-service")
 
     node_files = {
         "/tmp/genesis": store_genesis,
