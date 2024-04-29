@@ -23,7 +23,8 @@ def launch_grafana(plan, prometheus_url):
     )
 
     grafana_dashboard_config = plan.upload_files(
-        "templates/dashboard.yml"
+        "templates/dashboard.yml",
+        name="grafana-dashboard-config"
     )
 
     # Upload the custom dashboard JSON file

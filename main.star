@@ -32,7 +32,8 @@ def run(plan, args):
                 template = read_file("templates/genesis.json.tmpl"),
                 data = genesis_data
             )
-        }
+        },
+        name="genesis-file-template"
     )
 
     files = {
