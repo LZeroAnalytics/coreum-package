@@ -1,6 +1,7 @@
 prometheus = import_module("./src/prometheus/prometheus_launcher.star")
 grafana = import_module("./src/grafana/grafana_launcher.star")
 bdjuno = import_module("./src/bdjuno/bdjuno_launcher.star")
+faucet = import_module("./src/faucet/faucet_launcher.star")
 
 def run(plan, args):
 
@@ -325,3 +326,6 @@ def run(plan, args):
 
     # Start BDJuno explorer
     bdjuno.launch_bdjuno(plan)
+
+    # Start faucet service
+    faucet.launch_faucet(plan, chain_id)

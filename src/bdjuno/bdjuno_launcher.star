@@ -1,7 +1,7 @@
 def launch_bdjuno(plan):
     postgres_service = launch_postgres_service(plan)
 
-    # Get first node's IP address
+    # Get first node
     first_node = plan.get_service(
         name = "node1"
     )
