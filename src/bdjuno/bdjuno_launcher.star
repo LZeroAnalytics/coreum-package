@@ -125,7 +125,7 @@ def launch_hasura_service(plan, postgres_service):
         config = ServiceConfig(
             image = "coreumfoundation/hasura:latest",
             ports = {
-                "graphql": PortSpec(number=8080, transport_protocol="TCP", application_protocol="http")
+                "graphql": PortSpec(number=8080, transport_protocol="TCP")
             },
             env_vars = {
                 "HASURA_GRAPHQL_UNAUTHORIZED_ROLE": "anonymous",
@@ -144,20 +144,16 @@ def launch_hasura_service(plan, postgres_service):
 
 
 def launch_big_dipper(plan):
-    #TODO: Either change big dipper to support relative urls or get nginx to upgrade to ws://
     big_dipper_service = plan.add_service(
-        name="big-dipper-explorer",
+        name="big-dipper-service",
         config=ServiceConfig(
-            image="coreumfoundation/big-dipper-ui:2.19.3-64",
+            image="tiljordan/big-dipper-ui:latest",
             env_vars={
-                "NEXT_PUBLIC_GRAPHQL_URL": "/v1/graphql",  # Assuming Hasura runs on port 8080
-                "NEXT_PUBLIC_GRAPHQL_WS": "/v1/graphql",  # Assuming Hasura runs on port 8080
-                "NEXT_PUBLIC_RPC_WEBSOCKET": "/websocket",  # Assuming node RPC runs on port 26657
                 "NEXT_PUBLIC_CHAIN_TYPE": "devnet",
                 "PORT": "3000"
             },
             ports={
-                "ui": PortSpec(number=3000, transport_protocol="TCP", application_protocol="http")
+                "ui": PortSpec(number=3000, transport_protocol="TCP", wait=None)
             }
         )
     )
@@ -193,7 +189,7 @@ def launch_nginx(plan, big_dipper_service, harusa_service, node_service):
     )
 
     plan.add_service(
-        name="nginx",
+        name="block-explorer",
         config=ServiceConfig(
             image="nginx:latest",
             files={
