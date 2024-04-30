@@ -1,0 +1,6 @@
+additional_services: []
+participants:
+  - image: tiljordan/coreum-cored:latest
+    account_balance: 100000000000
+    staking_amount: 20000000000
+    count: 2
