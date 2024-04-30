@@ -1,3 +1,4 @@
+input_parser = import_module("./src/package_io/input_parser.star")
 genesis_generator = import_module("./src/genesis-generator/genesis_generator.star")
 prometheus = import_module("./src/prometheus/prometheus_launcher.star")
 grafana = import_module("./src/grafana/grafana_launcher.star")
@@ -6,16 +7,23 @@ faucet = import_module("./src/faucet/faucet_launcher.star")
 
 def run(plan, args):
 
-    # Retrieve params from config file
-    chain_id = args["chain_id"]
-    genesis_time = args["genesis_time"]
-    faucet_amount = args["faucet_amount"]
-    min_self_delegation = args["min_self_delegation"]
-    min_deposit = args["min_deposit"]
-    voting_period = args["voting_period"]
-    participants = args["participants"]
+    parsed_args = input_parser.input_parser(args)
 
-    genesis_file, mnemonics = genesis_generator.generate_genesis_file(plan, participants, chain_id, genesis_time, faucet_amount, min_self_delegation, min_deposit, voting_period)
+    general_args = parsed_args["general"]
+    faucet_args = parsed_args["faucet"]
+    staking_args = parsed_args["staking"]
+    governance_args = parsed_args["governance"]
+    additional_services = parsed_args["additional_services"]
+    participants = parsed_args["participants"]
+
+    chain_id = general_args["chain_id"]
+    key_password = general_args["key_password"]
+
+    faucet_mnemonic = faucet_args["mnemonic"]
+    transfer_amount = faucet_args["transfer_amount"]
+
+
+    genesis_file, mnemonics = genesis_generator.generate_genesis_file(plan, general_args, faucet_args, governance_args, staking_args, participants)
 
     node_files = {
         "/tmp/genesis": genesis_file,
@@ -52,7 +60,7 @@ def run(plan, args):
 
             # Recreate keys on the node
             mnemonic = mnemonics[counter]
-            recover_key_command = "echo -e '{0}\n{1}\n{1}' | cored keys add validator{2} --recover --chain-id {3}".format(mnemonic, "LZeroPassword!", counter, chain_id)
+            recover_key_command = "echo -e '{0}\n{1}\n{1}' | cored keys add validator{2} --recover --chain-id {3}".format(mnemonic, key_password, counter, chain_id)
             plan.exec(
                 service_name = node_name,
                 recipe = ExecRecipe(
@@ -131,14 +139,18 @@ def run(plan, args):
         )
         plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
 
-    # Start prometheus service
-    prometheus_url = prometheus.launch_prometheus(plan, node_names)
+    prometheus_url = None
+    # Map service names to their respective launch functions
+    service_launchers = {
+        "prometheus": lambda: prometheus.launch_prometheus(plan, node_names),
+        "grafana": lambda: grafana.launch_grafana(plan, prometheus_url) if prometheus_url else None,
+        "bdjuno": lambda: bdjuno.launch_bdjuno(plan),
+        "faucet": lambda: faucet.launch_faucet(plan, chain_id, faucet_mnemonic, transfer_amount)
+    }
 
-    # Start grafana
-    grafana.launch_grafana(plan, prometheus_url)
-
-    # Start BDJuno explorer
-    bdjuno.launch_bdjuno(plan)
-
-    # Start faucet service
-    faucet.launch_faucet(plan, chain_id)
+    for service in service_launchers:
+        if service in additional_services:
+            if service == "prometheus":
+                prometheus_url = service_launchers[service]()
+            else:
+                service_launchers[service]()

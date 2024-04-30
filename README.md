@@ -23,7 +23,7 @@ Kurtosis packages are parameterizable, meaning you can customize your network an
 kurtosis run --enclave my-testnet github.com/LZeroAnalytics/coreum-package --args-file network_params.yaml
 ```
 
-Where `network_params.yaml` contains the parameters for your network in your home directory. You can also use the [sample configuration file](samples/coreum_testnet.yml).
+Where `network_params.yaml` contains the parameters for your network in your home directory. You can also use the [sample configuration file](samples/default_config_sample.yml).
 
 #### Run on Kubernetes
 
@@ -38,7 +38,7 @@ Kurtosis packages work the same way over Docker or on Kubernetes. Please visit o
 
 2. To spin up the network, use the following command:
    ```bash
-   kurtosis run --enclave my-testnet . --args-file samples/coreum_testnet.yml
+   kurtosis run --enclave my-testnet . --args-file samples/default_config_sample.yml
    ```
 
    Replace `samples/coreum_testnet.yml` with the path to your custom configuration YAML file if needed.

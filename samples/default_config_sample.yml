@@ -1,0 +1,31 @@
+general:
+  chain_id: coreum-devnet-1
+  genesis_delay: 20
+  key_password: LZeroPassword!
+
+faucet:
+  mnemonic: fury gym tooth supply imitate fossil multiply future laundry spy century screen gloom net awake eager illness border hover tennis inspire nation regular ready
+  address: devcore1nv9l6qmv3teux3pgl49vxddrcja3c4fejnhz96
+  faucet_amount: 100000000000000
+  transfer_amount: 100000000
+
+staking:
+  min_self_delegation: 20000000000
+  max_validators: 32
+  downtime_jail_duration: 60s
+
+governance:
+  min_deposit: 4000000000
+  voting_period: 4h
+
+additional_services:
+  - faucet
+  - bdjuno
+  - prometheus
+  - grafana
+
+participants:
+  - image: tiljordan/coreum-cored:latest
+    account_balance: 100000000000
+    staking_amount: 20000000000
+    count: 3

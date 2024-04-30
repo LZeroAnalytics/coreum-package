@@ -1,26 +1,49 @@
-def generate_genesis_file(plan, participants, chain_id, genesis_time, faucet_amount, min_self_delegation, min_deposit, voting_period):
+def generate_genesis_file(plan, general_args, faucet_args, governance_args, staking_args, participants):
+
+    chain_id = general_args["chain_id"]
+    genesis_delay = general_args["genesis_delay"]
+    key_password = general_args["key_password"]
+
+    faucet_address = faucet_args["address"]
+    faucet_amount = faucet_args["faucet_amount"]
+
+    min_self_delegation = staking_args["min_self_delegation"]
+    max_validators = staking_args["max_validators"]
+    downtime_jail_duration = staking_args["downtime_jail_duration"]
+
+    min_deposit = governance_args["min_deposit"]
+    voting_period = governance_args["voting_period"]
+
+    # Calculate genesis time
+    genesis_time = get_genesis_time(plan, genesis_delay)
+
 
     # Start the service to generate genesis file
-    start_genesis_service(plan, chain_id, genesis_time, faucet_amount, min_self_delegation, min_deposit, voting_period)
+    start_genesis_service(plan, chain_id, genesis_time, faucet_address, faucet_amount, min_self_delegation, max_validators, downtime_jail_duration, min_deposit, voting_period)
 
     # Total number of nodes
     total_count = 0
+    account_balances = []
+    staking_amounts = []
     for participant in participants:
         total_count += participant["count"]
+        for _ in range(participant["count"]):
+            account_balances.append(str(participant["account_balance"]) + "udevcore")
+            staking_amounts.append(str(participant["staking_amount"]) + "udevcore")
 
     plan.print("Creating a total of {0} validators".format(total_count))
 
     # Generate an address for each node
-    mnemonics, addresses, pub_keys = generate_keys(plan, total_count, chain_id)
+    mnemonics, addresses, pub_keys = generate_keys(plan, total_count, chain_id, key_password)
 
     # Init the genesis file and use template file
     init_genesis(plan, chain_id)
 
     # Add accounts to genesis file
-    add_accounts(plan, chain_id, addresses, "100000000000udevcore")
+    add_accounts(plan, chain_id, addresses, account_balances)
 
     # Add validators to genesis using gentx commands
-    add_validators(plan, chain_id, addresses, pub_keys, min_self_delegation)
+    add_validators(plan, chain_id, addresses, pub_keys, min_self_delegation, key_password, staking_amounts)
 
     # Export genesis file
     genesis_file = plan.store_service_files(
@@ -35,13 +58,16 @@ def generate_genesis_file(plan, participants, chain_id, genesis_time, faucet_amo
     return genesis_file, mnemonics
 
 
-def start_genesis_service(plan, chain_id, genesis_time, faucet_amount, min_self_delegation, min_deposit, voting_period):
+def start_genesis_service(plan, chain_id, genesis_time, faucet_address, faucet_amount, min_self_delegation, max_validators, downtime_jail_duration, min_deposit, voting_period):
     # Configure genesis data for template
     genesis_data = {
         "ChainID": chain_id,
         "GenesisTime": genesis_time,
+        "FaucetAddress": faucet_address,
         "FaucetAmount": faucet_amount,
         "MinSelfDelegation": min_self_delegation,
+        "MaxValidators": max_validators,
+        "DowntimeJailDuration": downtime_jail_duration,
         "MinDeposit": min_deposit,
         "VotingPeriod": voting_period
     }
@@ -71,13 +97,13 @@ def start_genesis_service(plan, chain_id, genesis_time, faucet_amount, min_self_
     )
 
 
-def generate_keys(plan, total_count, chain_id):
+def generate_keys(plan, total_count, chain_id, keyPassword):
     addresses = []
     mnemonics = []
     pub_keys = []
     for i in range(total_count):
         # Add validator key
-        keys_command = "echo -e '{0}\n{0}' | cored keys add validator{1} --chain-id {2} --output json".format("LZeroPassword!", i, chain_id)
+        keys_command = "echo -e '{0}\n{0}' | cored keys add validator{1} --chain-id {2} --output json".format(keyPassword, i, chain_id)
         key_result = plan.exec(
             service_name = "genesis-service",
             recipe = ExecRecipe(
@@ -148,9 +174,9 @@ def init_genesis(plan, chain_id):
     )
 
 
-def add_accounts(plan, chain_id, addresses, balance):
-    for address in addresses:
-        add_account_command = "cored genesis add-genesis-account {0} {1} --chain-id {2}".format(address, balance, chain_id)
+def add_accounts(plan, chain_id, addresses, account_balances):
+    for i, address in enumerate(addresses):
+        add_account_command = "cored genesis add-genesis-account {0} {1} --chain-id {2}".format(address, account_balances[i], chain_id)
         plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
@@ -159,10 +185,9 @@ def add_accounts(plan, chain_id, addresses, balance):
         )
 
 
-def add_validators(plan, chain_id, addresses, pub_keys, min_self_delegation):
+def add_validators(plan, chain_id, addresses, pub_keys, min_self_delegation, key_password, staking_amounts):
     for i, address in enumerate(addresses):
         # Amount to bond
-        amount = "20000000000udevcore"
         filename = "gentx-validator{0}.json".format(i)
         pub_key = pub_keys[i]
 
@@ -174,7 +199,7 @@ def add_validators(plan, chain_id, addresses, pub_keys, min_self_delegation):
             )
         )
         # Create genesis transactions for validators
-        gentx_command = "echo -e 'LZeroPassword!\nLZeroPassword!' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --moniker 'validator{0}' --output-document /root/.core/{3}/config/gentx/{4} --chain-id {3} --pubkey '{5}'".format(i, amount, min_self_delegation, chain_id, filename, pub_key)
+        gentx_command = "echo -e '{6}\n{6}' | cored genesis gentx validator{0} {1} --min-self-delegation {2} --moniker 'validator{0}' --output-document /root/.core/{3}/config/gentx/{4} --chain-id {3} --pubkey '{5}'".format(i, staking_amounts[i], min_self_delegation, chain_id, filename, pub_key, key_password)
         plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
@@ -190,3 +215,27 @@ def add_validators(plan, chain_id, addresses, pub_keys, min_self_delegation):
             command=["/bin/sh", "-c", collect_gentxs_command]
         )
     )
+
+
+def get_genesis_time(plan, genesis_delay):
+    result = plan.run_python(
+        description="Calculating genesis time",
+        run="""
+import time
+from datetime import datetime, timedelta
+import sys
+
+# Get the padding from the command-line arguments
+padding = int(sys.argv[1])
+
+# Calculate future time by adding the padding (in seconds)
+future_time = datetime.utcnow() + timedelta(seconds=padding)
+
+# Format the future time in ISO 8601 format, appending 'Z' to denote UTC
+formatted_time = future_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+print(formatted_time, end="")
+""",
+        args=[str(genesis_delay)]
+    )
+    return result.output

@@ -1,16 +1,24 @@
-def launch_faucet(plan, chain_id):
+def launch_faucet(plan, chain_id, mnemonic, transfer_amount):
 
     # Get first node
     first_node = plan.get_service(
         name = "node1"
     )
 
-    mnemonic_file =  plan.upload_files(
-        src = "templates/mnemonic.txt",
-        name = "mnemonic-file",
+    mnemonic_data = {
+        "Mnemonic": mnemonic
+    }
+
+    mnemonic_file = plan.render_templates(
+        config = {
+            "mnemonic.txt": struct(
+                template = read_file("templates/mnemonic.txt.tmpl"),
+                data = mnemonic_data
+            )
+        },
+        name="faucet-mnemonic-file"
     )
 
-    # TODO: Fix issue with making requests to faucet service
     plan.add_service(
         name="faucet",
         config = ServiceConfig(
@@ -25,7 +33,7 @@ def launch_faucet(plan, chain_id):
             entrypoint = [
                 "bin/sh",
                 "-c",
-                "faucet --monitoring-address :8091 --address :8090 --chain-id " + chain_id + " --key-path-mnemonic /tmp/mnemonic/mnemonic.txt --node http://" + first_node.ip_address + ":" + str(first_node.ports["grpc"].number) + " --transfer-amount 100000000"
+                "faucet --monitoring-address :8091 --address :8090 --chain-id " + chain_id + " --key-path-mnemonic /tmp/mnemonic/mnemonic.txt --node http://" + first_node.ip_address + ":" + str(first_node.ports["grpc"].number) + " --transfer-amount " + str(transfer_amount)
             ]
         )
     )

@@ -24,7 +24,7 @@
         {
           "@type": "/cosmos.auth.v1beta1.BaseAccount",
           "account_number": "0",
-          "address": "devcore1ckuncyw0hftdq5qfjs6ee2v6z73sq0urd390cd",
+          "address": "{{ .FaucetAddress }}",
           "pub_key": null,
           "sequence": "0"
         }
@@ -43,7 +43,7 @@
     "bank": {
       "balances": [
         {
-          "address": "devcore1nv9l6qmv3teux3pgl49vxddrcja3c4fejnhz96",
+          "address": "{{ .FaucetAddress }}",
           "coins": [
             {
               "amount": "{{.FaucetAmount}}",
@@ -82,7 +82,7 @@
       "send_enabled": [],
       "supply": [
         {
-          "amount": "{{.FaucetAmount}}",
+          "amount": "{{ .FaucetAmount }}",
           "denom": "udevcore"
         }
       ]
@@ -245,7 +245,7 @@
     "slashing": {
       "missed_blocks": [],
       "params": {
-        "downtime_jail_duration": "60s",
+        "downtime_jail_duration": "{{ .DowntimeJailDuration }}",
         "min_signed_per_window": "0.500000000000000000",
         "signed_blocks_window": "34000",
         "slash_fraction_double_sign": "0.050000000000000000",
@@ -262,7 +262,7 @@
         "bond_denom": "udevcore",
         "historical_entries": 10000,
         "max_entries": 7,
-        "max_validators": 32,
+        "max_validators": {{ .MaxValidators }},
         "min_commission_rate": "0.000000000000000000",
         "unbonding_time": "168h"
       },
