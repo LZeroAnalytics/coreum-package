@@ -2,7 +2,7 @@
 
 This is a [Kurtosis][kurtosis-repo] package developed by [LZero](https://www.lzeroanalytics.com) that will spin up a private Coreum testnet over Docker or Kubernetes. Kurtosis packages are entirely reproducible and composable, so this will work the same way over Docker or Kubernetes, in the cloud or locally on your machine.
 
-You now have the ability to spin up a private Coreum testnet or public devnet/testnet with a single command. This package is designed to be used for testing, validation, and development, and is not intended for production use.
+You now have the ability to spin up a private [Coreum](https://www.coreum.com) testnet or public devnet/testnet with a single command. This package is designed to be used for testing, validation, and development, and is not intended for production use.
 
 Specifically, this [package][package-reference] will:
 
