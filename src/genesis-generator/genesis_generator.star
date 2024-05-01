@@ -55,7 +55,7 @@ def generate_genesis_file(plan, general_args, faucet_args, governance_args, stak
     # Remove genesis service after genesis file is exported
     plan.remove_service(name = "genesis-service")
 
-    return genesis_file, mnemonics
+    return genesis_file, mnemonics, addresses
 
 
 def start_genesis_service(plan, chain_id, genesis_time, faucet_address, faucet_amount, min_self_delegation, max_validators, downtime_jail_duration, min_deposit, voting_period):

@@ -23,7 +23,7 @@ def run(plan, args):
     transfer_amount = faucet_args["transfer_amount"]
 
 
-    genesis_file, mnemonics = genesis_generator.generate_genesis_file(plan, general_args, faucet_args, governance_args, staking_args, participants)
+    genesis_file, mnemonics, addresses = genesis_generator.generate_genesis_file(plan, general_args, faucet_args, governance_args, staking_args, participants)
 
     node_files = {
         "/tmp/genesis": genesis_file,
@@ -139,6 +139,15 @@ def run(plan, args):
         )
         plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
 
+    # Wait for 5 second to make sure blocks are produced
+    plan.run_python(
+        description="Calculating genesis time",
+        run="""
+import time
+time.sleep(5)
+"""
+    )
+
     prometheus_url = None
     # Map service names to their respective launch functions
     service_launchers = {
@@ -154,3 +163,6 @@ def run(plan, args):
                 prometheus_url = service_launchers[service]()
             else:
                 service_launchers[service]()
+
+    plan.print("Network launched successfully with these accounts")
+    plan.print(addresses)
