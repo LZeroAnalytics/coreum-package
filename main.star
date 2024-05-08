@@ -139,13 +139,22 @@ def run(plan, args):
         )
         plan.print("{0} started successfully with chain ID {1}".format(node_name, chain_id))
 
-    # Wait for 5 second to make sure blocks are produced
-    plan.run_python(
-        description="Calculating genesis time",
-        run="""
-import time
-time.sleep(5)
-"""
+    # Wait until first block is produced before deploying additional services
+    plan.wait(
+        service_name = "node1",
+        recipe = GetHttpRequestRecipe(
+            port_id = "rpc",
+            endpoint = "/status",
+            extract = {
+                "block": ".result.sync_info.latest_block_height"
+            }
+        ),
+        field = "extract.block",
+        assertion = ">=",
+        target_value = "1",
+        interval = "1s",
+        timeout = "1m",
+        description = "Waiting for first block"
     )
 
     prometheus_url = None
