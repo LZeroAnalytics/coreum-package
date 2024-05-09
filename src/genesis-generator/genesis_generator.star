@@ -3,6 +3,8 @@ def generate_genesis_file(plan, general_args, faucet_args, governance_args, stak
     chain_id = general_args["chain_id"]
     genesis_delay = general_args["genesis_delay"]
     key_password = general_args["key_password"]
+    block_size = general_args["block_size"]
+    max_gas = general_args["max_gas"]
 
     faucet_address = faucet_args["address"]
     faucet_amount = faucet_args["faucet_amount"]
@@ -19,7 +21,20 @@ def generate_genesis_file(plan, general_args, faucet_args, governance_args, stak
 
 
     # Start the service to generate genesis file
-    start_genesis_service(plan, chain_id, genesis_time, faucet_address, faucet_amount, min_self_delegation, max_validators, downtime_jail_duration, min_deposit, voting_period)
+    start_genesis_service(
+        plan,
+        chain_id,
+        genesis_time,
+        faucet_address,
+        faucet_amount,
+        min_self_delegation,
+        max_validators,
+        downtime_jail_duration,
+        min_deposit,
+        voting_period,
+        block_size,
+        max_gas
+    )
 
     # Total number of nodes
     total_count = 0
@@ -58,7 +73,20 @@ def generate_genesis_file(plan, general_args, faucet_args, governance_args, stak
     return genesis_file, mnemonics, addresses
 
 
-def start_genesis_service(plan, chain_id, genesis_time, faucet_address, faucet_amount, min_self_delegation, max_validators, downtime_jail_duration, min_deposit, voting_period):
+def start_genesis_service(
+        plan,
+        chain_id,
+        genesis_time,
+        faucet_address,
+        faucet_amount,
+        min_self_delegation,
+        max_validators,
+        downtime_jail_duration,
+        min_deposit,
+        voting_period,
+        block_size,
+        max_gas
+):
     # Configure genesis data for template
     genesis_data = {
         "ChainID": chain_id,
@@ -69,7 +97,9 @@ def start_genesis_service(plan, chain_id, genesis_time, faucet_address, faucet_a
         "MaxValidators": max_validators,
         "DowntimeJailDuration": downtime_jail_duration,
         "MinDeposit": min_deposit,
-        "VotingPeriod": voting_period
+        "VotingPeriod": voting_period,
+        "BlockSize": block_size,
+        "MaxGas": max_gas
     }
 
     # Render genesis file with cuastom params

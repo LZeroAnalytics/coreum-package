@@ -84,6 +84,14 @@ general:
    # The password use for the key store on each node
    key_password: LZeroPassword!
 
+  # The size of each block in bytes (default: 21MB)
+  # Too low decreases the network throughput
+  # Too high can cause network instability
+  block_size: 22020096
+  
+  # Total amount of gas that can be consumed by all transactions within a single block
+  max_gas: 50000000
+
 # Default parameters for the faucet
 faucet:
    # The mnemonic to use for the faucet service
@@ -165,7 +173,7 @@ participants:
 </details>
 
 <details>
-   <summary>A 5-node Coreum networks with different node images used</summary>
+   <summary>A 5-node Coreum network with different node images used</summary>
 
 ```yaml
 additional_services:
@@ -181,6 +189,27 @@ participants:
     count: 2
   - image: coreumfoundation/cored:v3.0.3
     account_balance: 200000000000
+    staking_amount: 20000000000
+    count: 3
+```
+</details>
+
+<details>
+<summary>A 3-node Coreum network with block size of 50MB</summary>
+
+```yaml
+general:
+  block_size: 52428800
+
+additional_services:
+  - faucet
+  - bdjuno
+  - prometheus
+  - grafana
+
+participants:
+  - image: tiljordan/coreum-cored:latest
+    account_balance: 100000000000
     staking_amount: 20000000000
     count: 3
 ```

@@ -1,0 +1,14 @@
+general:
+  block_size: 52428800
+
+additional_services:
+  - faucet
+  - bdjuno
+  - prometheus
+  - grafana
+
+participants:
+  - image: tiljordan/coreum-cored:latest
+    account_balance: 100000000000
+    staking_amount: 20000000000
+    count: 3

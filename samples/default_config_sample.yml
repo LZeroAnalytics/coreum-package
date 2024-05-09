@@ -2,6 +2,8 @@ general:
   chain_id: coreum-devnet-1
   genesis_delay: 20
   key_password: LZeroPassword!
+  block_size: 22020096
+  max_gas: 50000000
 
 faucet:
   mnemonic: fury gym tooth supply imitate fossil multiply future laundry spy century screen gloom net awake eager illness border hover tennis inspire nation regular ready

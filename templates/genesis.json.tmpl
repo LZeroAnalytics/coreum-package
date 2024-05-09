@@ -140,7 +140,7 @@
           "escalation_start_fraction": "0.8",
           "initial_gas_price": "0.0625",
           "long_ema_block_length": 1000,
-          "max_block_gas": 50000000,
+          "max_block_gas": {{ .MaxGas }},
           "max_discount": "0.5",
           "max_gas_price_multiplier": "1000.0",
           "short_ema_block_length": 50
@@ -292,8 +292,8 @@
   "chain_id": "{{.ChainID}}",
   "consensus_params": {
     "block": {
-      "max_bytes": "22020096",
-      "max_gas": "50000000"
+      "max_bytes": "{{ .BlockSize }}",
+      "max_gas": "{{ .MaxGas }}"
     },
     "evidence": {
       "max_age_duration": "172800000000000",

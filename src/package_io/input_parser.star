@@ -1,8 +1,9 @@
 DEFAULT_GENERAL = {
     "chain_id": "coreum-devnet-1",
     "genesis_delay": "20",
-    "key_password": "LZeroPassword!"
-
+    "key_password": "LZeroPassword!",
+    "block_size": 22020096,
+    "max_gas": "50000000"
 }
 
 DEFAULT_FAUCET = {
@@ -48,7 +49,9 @@ def input_parser(input_args):
     general = {
         "chain_id": input_args.get("general", {}).get("chain_id", DEFAULT_GENERAL["chain_id"]),
         "genesis_delay": input_args.get("general", {}).get("genesis_delay", DEFAULT_GENERAL["genesis_delay"]),
-        "key_password": input_args.get("general", {}).get("key_password", DEFAULT_GENERAL["key_password"])
+        "key_password": input_args.get("general", {}).get("key_password", DEFAULT_GENERAL["key_password"]),
+        "block_size": input_args.get("general", {}).get("block_size", DEFAULT_GENERAL["block_size"]),
+        "max_gas": input_args.get("general", {}).get("max_gas", DEFAULT_GENERAL["max_gas"])
     }
     result["general"] = general
 
@@ -63,6 +66,14 @@ def input_parser(input_args):
 
     if len(general["key_password"]) < 8 or len(general["key_password"]) > 20:
         fail("Key password must be at between 8 and 20 characters")
+
+    block_size_int = int(general["block_size"])
+    if block_size_int < 0:
+        fail("Block size requires non-negative integer")
+
+    max_gas_int = int(general["max_gas"])
+    if max_gas_int < 0:
+        fail("Max gas requires non-negative integer")
 
 
     # Apply defaults and validate 'faucet' settings
