@@ -4,6 +4,7 @@ prometheus = import_module("./src/prometheus/prometheus_launcher.star")
 grafana = import_module("./src/grafana/grafana_launcher.star")
 bdjuno = import_module("./src/bdjuno/bdjuno_launcher.star")
 faucet = import_module("./src/faucet/faucet_launcher.star")
+gaia = import_module("./src/gaia/gaia_launcher.star")
 
 def run(plan, args):
 
@@ -14,6 +15,7 @@ def run(plan, args):
     staking_args = parsed_args["staking"]
     governance_args = parsed_args["governance"]
     additional_services = parsed_args["additional_services"]
+    gaia_args = parsed_args["gaia"]
     participants = parsed_args["participants"]
 
     chain_id = general_args["chain_id"]
@@ -163,7 +165,8 @@ def run(plan, args):
         "prometheus": lambda: prometheus.launch_prometheus(plan, node_names),
         "grafana": lambda: grafana.launch_grafana(plan, prometheus_url) if prometheus_url else None,
         "bdjuno": lambda: bdjuno.launch_bdjuno(plan),
-        "faucet": lambda: faucet.launch_faucet(plan, chain_id, faucet_mnemonic, transfer_amount)
+        "faucet": lambda: faucet.launch_faucet(plan, chain_id, faucet_mnemonic, transfer_amount),
+        "gaia": lambda: gaia.launch_gaia(plan, gaia_args["chain_id"], gaia_args["minimum_gas_price"], gaia_args["num_validators"])
     }
 
     for service in service_launchers:

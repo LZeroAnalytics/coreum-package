@@ -20,11 +20,17 @@ governance:
   min_deposit: 4000000000
   voting_period: 4h
 
+gaia:
+  chain_id: cosmos-lzero-testnet
+  minimum_gas_price: 0.01photino,0.001stake
+  num_validators: 4
+
 additional_services:
   - faucet
   - bdjuno
   - prometheus
   - grafana
+  - gaia
 
 participants:
   - image: tiljordan/coreum-cored:latest

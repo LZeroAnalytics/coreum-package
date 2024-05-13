@@ -127,6 +127,16 @@ governance:
    # The amount of time participants can vote on a proposal
    voting_period: 4h
 
+# Default parameters for Cosmos hub (gaia)
+gaia:
+   # The chain id of the cosmos hub network
+   chain_id: cosmos-lzero-testnet
+   
+   # The minimum amount of fess required for transactions
+   # 0.01 photino tokens required per unit of gas
+   # 0.001 stak tokens required per unit of gas
+   minimum_gas_price: 0.01photino,0.001stake
+   num_validators: 4
 
 # Additional services to launch
 # Faucet: Gives access to an api to fund addresses
