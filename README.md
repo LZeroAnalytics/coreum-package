@@ -143,11 +143,15 @@ gaia:
 # Bdjuno: The Big Dipper block explorer based on bdjuno and postgres
 # Prometheus: Provides prometheus service for accessing node metrics
 # Grafana: Dashboard that pulls data from prometheus
+# Gaia: The Cosmos Hub blockchain - spins up one node with three accounts
+# Hermes: A IBC relay that connects gaia and the coreum testnet
 additional_services:
    - faucet
    - bdjuno
    - prometheus
    - grafana
+   - gaia
+   - hermes
 
 # Specification of the participants in the network
 # Each participant is a template for nodes and allows to create customisable networks
@@ -222,6 +226,26 @@ participants:
     account_balance: 100000000000
     staking_amount: 20000000000
     count: 3
+```
+</details>
+
+<details>
+<summary>A 2-node Coreum network with gaia and hermes</summary>
+
+```yaml
+additional_services:
+  - gaia
+  - hermes
+
+gaia:
+  chain_id: cosmos-lzero-testnet
+  minimum_gas_price: 0.1stake
+
+participants:
+- image: tiljordan/coreum-cored:latest
+  account_balance: 100000000000
+  staking_amount: 20000000000
+  count: 2
 ```
 </details>
 

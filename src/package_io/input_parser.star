@@ -29,13 +29,11 @@ DEFAULT_ADDITIONAL_SERVICES = [
     "bdjuno",
     "prometheus",
     "grafana",
-    "gaia"
 ]
 
 DEFAULT_GAIA = {
     "chain_id": "cosmos-lzero-testnet",
-    "minimum_gas_price": "0.01photino,0.001stake",
-    "num_validators": 4
+    "minimum_gas_price": "0.1stake"
 }
 
 DEFAULT_PARTICIPANTS = [
@@ -139,22 +137,21 @@ def input_parser(input_args):
 
     # Additional services
     additional_services = input_args.get("additional_services", DEFAULT_ADDITIONAL_SERVICES)
-    result.update({"additional_services": additional_services})
+    result["additional_services"] = additional_services
 
     if input_args.get("additional_services") != None:
         if "grafana" in input_args.get("additional_services") and "prometheus" not in input_args.get("additional_services"):
             fail("Grafana service requires prometheus service")
 
+        if "hermes" in input_args.get("additional_services") and "gaia" not in input_args.get("additional_services"):
+            fail("Hermes service requires gaia service")
+
     # Gaia
     gaia = {
         "chain_id": input_args.get("gaia", {}).get("chain_id", DEFAULT_GAIA["chain_id"]),
         "minimum_gas_price": input_args.get("gaia", {}).get("minimum_gas_price", DEFAULT_GAIA["minimum_gas_price"]),
-        "num_validators": input_args.get("gaia", {}).get("num_validators", DEFAULT_GAIA["num_validators"]),
     }
     result["gaia"] = gaia
-
-    if int(gaia["num_validators"]) <= 0:
-        fail("Gaia number of validators requires a positive integer")
 
     # Participants
     participants = input_args.get("participants", DEFAULT_PARTICIPANTS)

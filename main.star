@@ -5,6 +5,7 @@ grafana = import_module("./src/grafana/grafana_launcher.star")
 bdjuno = import_module("./src/bdjuno/bdjuno_launcher.star")
 faucet = import_module("./src/faucet/faucet_launcher.star")
 gaia = import_module("./src/gaia/gaia_launcher.star")
+hermes = import_module("./src/hermes/hermes_launcher.star")
 
 def run(plan, args):
 
@@ -160,21 +161,32 @@ def run(plan, args):
     )
 
     prometheus_url = None
+    validator_mnemonic = None
+    relayer_mnemonic = None
+    funding_mnemonic = None
     # Map service names to their respective launch functions
     service_launchers = {
         "prometheus": lambda: prometheus.launch_prometheus(plan, node_names),
         "grafana": lambda: grafana.launch_grafana(plan, prometheus_url) if prometheus_url else None,
         "bdjuno": lambda: bdjuno.launch_bdjuno(plan),
         "faucet": lambda: faucet.launch_faucet(plan, chain_id, faucet_mnemonic, transfer_amount),
-        "gaia": lambda: gaia.launch_gaia(plan, gaia_args["chain_id"], gaia_args["minimum_gas_price"], gaia_args["num_validators"])
+        "gaia": lambda: gaia.launch_gaia(plan, gaia_args["chain_id"], gaia_args["minimum_gas_price"]),
+        "hermes": lambda: hermes.launch_hermes(plan, chain_id, gaia_args["chain_id"], mnemonics[0], relayer_mnemonic) if relayer_mnemonic else None
     }
+
 
     for service in service_launchers:
         if service in additional_services:
             if service == "prometheus":
                 prometheus_url = service_launchers[service]()
+            elif service == "gaia":
+                validator_mnemonic, relayer_mnemonic, funding_mnemonic = service_launchers[service]()
             else:
                 service_launchers[service]()
 
-    plan.print("Network launched successfully with these accounts")
+    plan.print("Coreum network launched successfully with these accounts")
     plan.print(addresses)
+
+    if "gaia" in additional_services:
+        plan.print("Gaia network launched successfully with these mnemonics")
+        plan.print([validator_mnemonic, relayer_mnemonic, funding_mnemonic])

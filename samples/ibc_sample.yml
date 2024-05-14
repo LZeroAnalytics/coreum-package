@@ -1,0 +1,13 @@
+additional_services:
+  - gaia
+  - hermes
+
+gaia:
+  chain_id: cosmos-lzero-testnet
+  minimum_gas_price: 0.1stake
+
+participants:
+  - image: tiljordan/coreum-cored:latest
+    account_balance: 100000000000
+    staking_amount: 20000000000
+    count: 2
