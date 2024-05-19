@@ -1,172 +1,109 @@
-DEFAULT_GENERAL = {
-    "chain_id": "coreum-devnet-1",
-    "genesis_delay": "20",
-    "key_password": "LZeroPassword!",
-    "block_size": 22020096,
-    "max_gas": "50000000"
+def read_json_file(file_path):
+    local_contents = read_file(src=file_path)
+    return json.decode(local_contents)
+
+# Paths to the default JSON files
+DEFAULT_COREUM_FILE = "./coreum_defaults.json"
+DEFAULT_GAIA_FILE = "./gaia_defaults.json"
+
+DEFAULT_RELAYER_CONFIG = {
+    "hermes_image": "tiljordan/hermes:latest"
 }
 
-DEFAULT_FAUCET = {
-    "mnemonic": "fury gym tooth supply imitate fossil multiply future laundry spy century screen gloom net awake eager illness border hover tennis inspire nation regular ready",
-    "address": "devcore1nv9l6qmv3teux3pgl49vxddrcja3c4fejnhz96",
-    "faucet_amount": "100000000000000",
-    "transfer_amount": "100000000"
-}
+def apply_chain_defaults(chain, defaults):
+    # Simple key-value defaults
+    chain["name"] = chain.get("name", defaults["name"])
+    chain["type"] = chain.get("type", defaults["type"])
+    chain["chain_id"] = chain.get("chain_id", defaults["chain_id"])
+    chain["genesis_delay"] = chain.get("genesis_delay", defaults["genesis_delay"])
+    chain["initial_height"] = chain.get("initial_height", defaults["initial_height"])
 
-DEFAULT_STAKING = {
-    "min_self_delegation": "20000000000",
-    "max_validators": "32",
-    "downtime_jail_duration": "60s"
-}
+    # Nested defaults
+    chain["denom"] = chain.get("denom", {})
+    for key, value in defaults["denom"].items():
+        chain["denom"][key] = chain["denom"].get(key, value)
 
-DEFAULT_GOVERNANCE = {
-    "min_deposit": "4000000000",
-    "voting_period": "4h"
-}
+    chain["faucet"] = chain.get("faucet", {})
+    for key, value in defaults["faucet"].items():
+        chain["faucet"][key] = chain["faucet"].get(key, value)
 
-DEFAULT_ADDITIONAL_SERVICES = [
-    "faucet",
-    "bdjuno",
-    "prometheus",
-    "grafana",
-]
+    chain["consensus_params"] = chain.get("consensus_params", {})
+    for key, value in defaults["consensus_params"].items():
+        chain["consensus_params"][key] = chain["consensus_params"].get(key, value)
 
-DEFAULT_GAIA = {
-    "chain_id": "cosmos-lzero-testnet",
-    "minimum_gas_price": "0.1stake"
-}
+    chain["staking"] = chain.get("staking", {})
+    for key, value in defaults["staking"].items():
+        chain["staking"][key] = chain["staking"].get(key, value)
 
-DEFAULT_PARTICIPANTS = [
-    {
-        "image": "tiljordan/coreum-cored:latest",
-        "account_balance": "100000000000",
-        "staking_amount": "20000000000",
-        "count": 3
-    }
-]
+    chain["modules"] = chain.get("modules", {})
+    for module, module_defaults in defaults["modules"].items():
+        chain["modules"][module] = chain["modules"].get(module, {})
+        for key, value in module_defaults.items():
+            chain["modules"][module][key] = chain["modules"][module].get(key, value)
 
+    # Apply defaults to participants
+    if "participants" in chain:
+        default_participant = defaults["participants"][0]
+        participants = []
+        for participant in chain["participants"]:
+            for key, value in default_participant.items():
+                participant[key] = participant.get(key, value)
+            participants.append(participant)
+        chain["participants"] = participants
 
-def input_parser(input_args):
-    # Apply defaults and validate the 'general' settings
-    result = {}
+    return chain
 
-    # Apply defaults and validate the 'general' settings
-    general = {
-        "chain_id": input_args.get("general", {}).get("chain_id", DEFAULT_GENERAL["chain_id"]),
-        "genesis_delay": input_args.get("general", {}).get("genesis_delay", DEFAULT_GENERAL["genesis_delay"]),
-        "key_password": input_args.get("general", {}).get("key_password", DEFAULT_GENERAL["key_password"]),
-        "block_size": input_args.get("general", {}).get("block_size", DEFAULT_GENERAL["block_size"]),
-        "max_gas": input_args.get("general", {}).get("max_gas", DEFAULT_GENERAL["max_gas"])
-    }
-    result["general"] = general
+def validate_input_args(input_args):
+    if not input_args or "chains" not in input_args:
+        fail("Input arguments must include the 'chains' field.")
 
-    # Validate 'general' settings
-    if general["chain_id"] != "coreum-devnet-1":
-        fail("Currently only coreum-devnet-1 is supported as chain id")
+    chain_names = []
+    for chain in input_args["chains"]:
+        if "name" not in chain or "type" not in chain:
+            fail("Each chain must specify a 'name' and a 'type'.")
+        if chain["name"] in chain_names:
+            fail("Duplicate chain name found: " + chain["name"])
+        chain_names.append(chain["name"])
 
+    for connection in input_args.get("connections", []):
+        if connection["chain_a"] not in chain_names:
+            fail("Connection specified with unknown chain name: " + connection["chain_a"])
+        if connection["chain_b"] not in chain_names:
+            fail("Connection specified with unknown chain name: " + connection["chain_b"])
+        if connection["chain_a"] == connection["chain_b"]:
+            fail("Connection cannot be made from a chain to itself: " + connection["chain_a"])
 
-    genesis_delay_int = int(general["genesis_delay"])
-    if genesis_delay_int < 0:
-        fail("Genesis delay requires a non-negative integer")
+def input_parser(input_args=None):
+    coreum_defaults = read_json_file(DEFAULT_COREUM_FILE)
+    gaia_defaults = read_json_file(DEFAULT_GAIA_FILE)
 
-    if len(general["key_password"]) < 8 or len(general["key_password"]) > 20:
-        fail("Key password must be at between 8 and 20 characters")
+    result = {"chains": [], "connections": []}
 
-    block_size_int = int(general["block_size"])
-    if block_size_int < 0:
-        fail("Block size requires non-negative integer")
+    if not input_args:
+        input_args = {"chains": [coreum_defaults]}
 
-    max_gas_int = int(general["max_gas"])
-    if max_gas_int < 0:
-        fail("Max gas requires non-negative integer")
+    validate_input_args(input_args)
 
+    if "chains" not in input_args:
+        result["chains"].append(coreum_defaults)
+    else:
+        for chain in input_args["chains"]:
+            chain_type = chain.get("type", "coreum")
+            if chain_type == "coreum":
+                defaults = coreum_defaults
+            elif chain_type == "gaia":
+                defaults = gaia_defaults
+            else:
+                fail("Unsupported chain type: " + chain_type)
 
-    # Apply defaults and validate 'faucet' settings
-    faucet = {
-        "mnemonic": input_args.get("faucet", {}).get("mnemonic", DEFAULT_FAUCET["mnemonic"]),
-        "address": input_args.get("faucet", {}).get("address", DEFAULT_FAUCET["address"]),
-        "faucet_amount": input_args.get("faucet", {}).get("faucet_amount", DEFAULT_FAUCET["faucet_amount"]),
-        "transfer_amount": input_args.get("faucet", {}).get("transfer_amount", DEFAULT_FAUCET["transfer_amount"])
-    }
-    result["faucet"] = faucet
+            # Apply defaults to chain
+            chain_config = apply_chain_defaults(chain, defaults)
+            result["chains"].append(chain_config)
 
-    # Validate 'faucet' settings
-    if len(faucet["mnemonic"].split()) != 24:
-        fail("Mnemonic must consist of exactly 24 words")
-    if not faucet["address"].startswith("devcore"):
-        fail("Faucet address must start with 'devcore'")
-    # faucet requires mnemonic if address is given
-    if "address" in input_args.get("faucet", {}) and "mnemonic" not in input_args.get("faucet", {}):
-        fail("Faucet address provided without a corresponding mnemonic.")
-    if "mnemonic" in input_args.get("faucet", {}) and "address" not in input_args.get("faucet", {}):
-        fail("Mnemonic provided without a corresponding faucet address")
-
-    faucet_amount_int = int(faucet["faucet_amount"])
-    if faucet_amount_int < 0:
-        fail("Faucet amount expects a non-negative integer")
-
-    transfer_amount = int(faucet["transfer_amount"])
-    if transfer_amount < 0:
-        fail("Transfer amount expects a non-negative integer")
-
-
-    # Apply defaults and validate 'staking' settings
-    staking = {
-        "min_self_delegation": input_args.get("staking", {}).get("min_self_delegation", DEFAULT_STAKING["min_self_delegation"]),
-        "max_validators": input_args.get("staking", {}).get("max_validators", DEFAULT_STAKING["max_validators"]),
-        "downtime_jail_duration": input_args.get("staking", {}).get("downtime_jail_duration", DEFAULT_STAKING["downtime_jail_duration"])
-    }
-    result["staking"] = staking
-
-    # Validate 'staking' settings
-    min_self_delegation = int(staking["min_self_delegation"])
-    if min_self_delegation < 0:
-        fail("Min self delegation expects a non-negative integer")
-    max_validators_int = int(staking["max_validators"])
-    if max_validators_int < 2:
-        fail("Max validators should be at least 2")
-    if not staking["downtime_jail_duration"].endswith(('s', 'm', 'h')):
-        fail("Downtime jail duration expects a time string (e.g., '60s', '2m', '1h')")
-
-    # Apply defaults and validate 'governance' settings
-    governance = {
-        "min_deposit": input_args.get("governance", {}).get("min_deposit", DEFAULT_GOVERNANCE["min_deposit"]),
-        "voting_period": input_args.get("governance", {}).get("voting_period", DEFAULT_GOVERNANCE["voting_period"])
-    }
-    result["governance"] = governance
-
-    # Additional services
-    additional_services = input_args.get("additional_services", DEFAULT_ADDITIONAL_SERVICES)
-    result["additional_services"] = additional_services
-
-    if input_args.get("additional_services") != None:
-        if "grafana" in input_args.get("additional_services") and "prometheus" not in input_args.get("additional_services"):
-            fail("Grafana service requires prometheus service")
-
-        if "hermes" in input_args.get("additional_services") and "gaia" not in input_args.get("additional_services"):
-            fail("Hermes service requires gaia service")
-
-    # Gaia
-    gaia = {
-        "chain_id": input_args.get("gaia", {}).get("chain_id", DEFAULT_GAIA["chain_id"]),
-        "minimum_gas_price": input_args.get("gaia", {}).get("minimum_gas_price", DEFAULT_GAIA["minimum_gas_price"]),
-    }
-    result["gaia"] = gaia
-
-    # Participants
-    participants = input_args.get("participants", DEFAULT_PARTICIPANTS)
-    result.update({"participants": participants})
-
-    for participant in participants:
-        staking_amount = int(participant["staking_amount"])
-        account_balance = int(participant["account_balance"])
-        if staking_amount < int(staking["min_self_delegation"]):
-            fail("Staking amount needs to be at least the min self delegation (default: 20000000000")
-        if staking_amount > account_balance:
-            fail("Account balance needs to be at least the staking amount")
-
-        count = int(participant["count"])
-        if count < 1:
-            fail("Participant count needs to be at least 1")
+    # Process connections with default relayer_config
+    for connection in input_args.get("connections", []):
+        if "relayer_config" not in connection:
+            connection["relayer_config"] = DEFAULT_RELAYER_CONFIG
+        result["connections"].append(connection)
 
     return result

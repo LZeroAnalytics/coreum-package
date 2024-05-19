@@ -1,0 +1,83 @@
+{
+  "name": "gaia",
+  "type": "gaia",
+  "chain_id": "cosmos-lzero-testnet",
+  "genesis_delay": 20,
+  "initial_height": 1,
+  "denom": {
+    "name": "stake",
+    "display": "stake",
+    "symbol": "stake",
+    "description": "stake coin",
+    "units": [
+      {"denom": "stake", "exponent": 0}
+    ]
+  },
+  "faucet": {
+    "faucet_amount": 100000000000000,
+    "transfer_amount": 100000000
+  },
+  "consensus_params": {
+    "block_max_bytes": 22020096,
+    "block_max_gas": -1,
+    "evidence_max_age_duration": 172800000000000,
+    "evidence_max_age_num_blocks": 100000,
+    "evidence_max_bytes": 1048576,
+    "validator_pub_key_types": ["ed25519"]
+  },
+  "staking": {
+    "max_validators": 100,
+    "downtime_jail_duration": "600s",
+    "min_self_delegation": 20000000000
+  },
+  "modules": {
+    "auth": {
+      "max_memo_characters": 256,
+      "sig_verify_cost_ed25519": 590,
+      "sig_verify_cost_secp256k1": 1000,
+      "tx_sig_limit": 7,
+      "tx_size_cost_per_byte": 10
+    },
+    "distribution": {
+      "base_proposer_reward": 0.000000000000000000,
+      "bonus_proposer_reward": 0.000000000000000000,
+      "community_tax": 0.020000000000000000,
+      "withdraw_addr_enabled": true
+    },
+    "crisis": {
+      "constant_fee_amount": 1000
+    },
+    "slashing": {
+      "downtime_jail_duration": "600s",
+      "min_signed_per_window": 0.500000000000000000,
+      "signed_blocks_window": 100,
+      "slash_fraction_double_sign": 0.050000000000000000,
+      "slash_fraction_downtime": 0.010000000000000000
+    },
+    "mint": {
+      "annual_provisions": 0.000000000000000000,
+      "inflation": 0.130000000000000000,
+      "blocks_per_year": 6311520,
+      "goal_bonded": 0.670000000000000000,
+      "inflation_max": 0.200000000000000000,
+      "inflation_min": 0.070000000000000000,
+      "inflation_rate_change": 0.130000000000000000
+    },
+    "ibc": {
+      "allowed_clients": ["06-solomachine", "07-tendermint", "09-localhost"],
+      "max_expected_time_per_block": 30000000000
+    }
+  },
+  "participants": [
+    {
+      "image": "tiljordan/gaia:v15.2.0",
+      "account_balance": 100000000000,
+      "staking_amount": 20000000000,
+      "count": 1,
+      "staking": true
+    }
+  ],
+  "additional_services": [
+    "faucet"
+  ]
+}
