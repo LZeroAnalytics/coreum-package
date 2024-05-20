@@ -18,7 +18,7 @@ def launch_network(plan, genesis_files, parsed_args):
         for participant in chain["participants"]:
             for _ in range(participant["count"]):
                 node_counter += 1
-                node_name = "{}-node{}".format(chain_name, node_counter)
+                node_name = "{}-node-{}".format(chain_name, node_counter)
                 node_id, node_ip =  setup_node(plan, node_name, participant, binary,cored_args, config_folder, genesis_file, mnemonics, faucet_data, node_counter == 1)
                 node_info.append({"name": node_name, "node_id": node_id, "ip": node_ip})
 
@@ -134,5 +134,3 @@ def start_nodes(plan, node_info, binary, cored_args):
             )
         )
         plan.print("{} started successfully".format(node_name))
-
-        # cored start --rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090 --p2p.seeds '' --chain-id coreum-devnet-1
