@@ -1,4 +1,5 @@
 def launch_network(plan, genesis_files, parsed_args):
+    networks = {}
     for chain in parsed_args["chains"]:
         chain_name = chain["name"]
         chain_type = chain["type"]
@@ -19,14 +20,16 @@ def launch_network(plan, genesis_files, parsed_args):
             for _ in range(participant["count"]):
                 node_counter += 1
                 node_name = "{}-node-{}".format(chain_name, node_counter)
-                node_id, node_ip =  setup_node(plan, node_name, participant, binary,cored_args, config_folder, genesis_file, mnemonics, faucet_data, node_counter == 1)
+                node_id, node_ip =  setup_node(plan, node_name, chain["chain_id"], participant, binary,cored_args, config_folder, genesis_file, mnemonics, faucet_data, node_counter == 1)
                 node_info.append({"name": node_name, "node_id": node_id, "ip": node_ip})
 
         if binary == "gaiad":
             cored_args = "--minimum-gas-prices {}{}".format(chain["modules"]["feemodel"]["min_gas_price"], chain["denom"]["name"])
         start_nodes(plan, node_info, binary, cored_args)
+        networks[chain_name] = node_info
+    return networks
 
-def setup_node(plan, node_name, participant, binary, cored_args, config_folder, genesis_file, mnemonics, faucet_data, is_first_node):
+def setup_node(plan, node_name, chain_id, participant, binary, cored_args, config_folder, genesis_file, mnemonics, faucet_data, is_first_node):
     # Add genesis file to the node
     files = {
         "/tmp/genesis": genesis_file,
@@ -64,6 +67,7 @@ def setup_node(plan, node_name, participant, binary, cored_args, config_folder, 
     if is_first_node and faucet_data:
         setup_faucet(plan, node_name, faucet_data, binary, cored_args)
 
+    setup_prometheus(plan, node_name, binary, chain_id)
     node_ip = node_service.ip_address
     return node_id, node_ip
 
@@ -110,6 +114,24 @@ def setup_faucet(plan, node_name, faucet_data, binary, cored_args):
         service_name=node_name,
         recipe=ExecRecipe(
             command=["/bin/sh", "-c", recover_faucet_command]
+        )
+    )
+
+def setup_prometheus(plan, node_name, binary, chain_id):
+    if binary == "cored":
+        config_path = "/root/.core/" + chain_id + "/config/config.toml"
+    else:
+        config_path = "/root/.gaia/config/config.toml"
+
+    update_prometheus_command = (
+            "sed -i 's|^prometheus = false|prometheus = true|' " + config_path + " && " +
+            "sed -i 's|^prometheus_listen_addr = \":26660\"|prometheus_listen_addr = \"0.0.0.0:26660\"|' " + config_path
+    )
+
+    plan.exec(
+        service_name=node_name,
+        recipe=ExecRecipe(
+            command=["/bin/sh", "-c", update_prometheus_command]
         )
     )
 
