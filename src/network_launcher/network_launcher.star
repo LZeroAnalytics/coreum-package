@@ -22,6 +22,8 @@ def launch_network(plan, genesis_files, parsed_args):
                 node_id, node_ip =  setup_node(plan, node_name, participant, binary,cored_args, config_folder, genesis_file, mnemonics, faucet_data, node_counter == 1)
                 node_info.append({"name": node_name, "node_id": node_id, "ip": node_ip})
 
+        if binary == "gaiad":
+            cored_args = "--minimum-gas-prices {}{}".format(chain["modules"]["feemodel"]["min_gas_price"], chain["denom"]["name"])
         start_nodes(plan, node_info, binary, cored_args)
 
 def setup_node(plan, node_name, participant, binary, cored_args, config_folder, genesis_file, mnemonics, faucet_data, is_first_node):
@@ -126,7 +128,6 @@ def start_nodes(plan, node_info, binary, cored_args):
 
         rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090"
         start_command = "nohup {} start {} {} {} > /dev/null 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
-
         plan.exec(
             service_name=node_name,
             recipe=ExecRecipe(
