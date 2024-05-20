@@ -2,16 +2,17 @@ def generate_genesis_files(plan, parsed_args):
     genesis_files = {}
     for chain in parsed_args["chains"]:
         if chain["type"] == "coreum":
-            genesis_file, mnemonics, addresses = generate_genesis_file(plan, chain, "cored", "/root/.core/coreum-mainnet-1/config")
+            genesis_file, mnemonics, addresses, faucet_data = generate_genesis_file(plan, chain, "cored", "/root/.core/coreum-mainnet-1/config")
         elif chain["type"] == "gaia":
-            genesis_file, mnemonics, addresses = generate_genesis_file(plan, chain, "gaiad", "/root/.gaia/config")
+            genesis_file, mnemonics, addresses, faucet_data = generate_genesis_file(plan, chain, "gaiad", "/root/.gaia/config")
         else:
             fail("Unsupported chain type: " + chain["type"])
 
         genesis_files[chain["name"]] = {
             "genesis_file": genesis_file,
             "mnemonics": mnemonics,
-            "addresses": addresses
+            "addresses": addresses,
+            "faucet": faucet_data
         }
     return genesis_files
 
@@ -24,6 +25,8 @@ def generate_genesis_file(plan, chain, binary, config_path):
     faucet = chain["faucet"]
     initial_height = chain["initial_height"]
     genesis_time = get_genesis_time(plan, genesis_delay)
+
+    faucet_data = None
 
     # Start the service to generate genesis file
     start_genesis_service(
@@ -57,7 +60,15 @@ def generate_genesis_file(plan, chain, binary, config_path):
 
     init_genesis(plan, chain_id, binary, config_path)
 
-    add_accounts(plan, chain_id, addresses, account_balances, binary)
+    add_accounts(plan, addresses, account_balances, binary)
+
+    # Add faucet if enabled
+    if "faucet" in chain["additional_services"]:
+        faucet_mnemonic, faucet_address = add_faucet(plan, faucet["faucet_amount"], chain["name"], denom["name"], binary)
+        faucet_data = {
+            "mnemonic": faucet_mnemonic,
+            "address": faucet_address
+        }
 
     for participant in chain["participants"]:
         for _ in range(participant["count"]):
@@ -77,7 +88,7 @@ def generate_genesis_file(plan, chain, binary, config_path):
     )
     plan.remove_service(name="genesis-service")
 
-    return genesis_file, mnemonics, addresses
+    return genesis_file, mnemonics, addresses, faucet_data
 
 def start_genesis_service(plan, chain_id, genesis_time, denom, consensus_params, modules, chain_name, initial_height, binary):
     genesis_data = {
@@ -227,7 +238,7 @@ def init_genesis(plan, chain_id, binary, config_path):
         )
     )
 
-def add_accounts(plan, chain_id, addresses, account_balances, binary):
+def add_accounts(plan, addresses, account_balances, binary):
     for i, address in enumerate(addresses):
         add_account_command = "{} genesis add-genesis-account {} {}".format(binary, address, account_balances[i])
         plan.exec(
@@ -236,6 +247,36 @@ def add_accounts(plan, chain_id, addresses, account_balances, binary):
                 command=["/bin/sh", "-c", add_account_command]
             )
         )
+
+def add_faucet(plan, faucet_amount, chain_name, denom_name, binary):
+
+    keyring_flags = "--keyring-backend test"
+
+    keys_command = "{} keys add faucet-{} {} --output json".format(binary, chain_name, keyring_flags)
+    key_result = plan.exec(
+        service_name="genesis-service",
+        recipe=ExecRecipe(
+            command=["/bin/sh", "-c", keys_command],
+            extract={
+                "faucet_address": "fromjson | .address",
+                "mnemonic": "fromjson | .mnemonic"
+            }
+        )
+    )
+
+    faucet_address = key_result["extract.faucet_address"]
+    faucet_mnemonic = key_result["extract.mnemonic"]
+
+    add_account_command = "{} genesis add-genesis-account {} {}{}".format(binary, faucet_address, faucet_amount, denom_name)
+    plan.exec(
+        service_name="genesis-service",
+        recipe=ExecRecipe(
+            command=["/bin/sh", "-c", add_account_command]
+        )
+    )
+
+    return faucet_mnemonic, faucet_address
+
 
 def add_validators(plan, chain_id, addresses, pub_keys, staking_amounts, binary, config_path):
 
