@@ -4,134 +4,373 @@
     "auth": {
       "accounts": [],
       "params": {
-        "max_memo_characters": {{ .AuthMaxMemoCharacters }},
-"sig_verify_cost_ed25519": {{ .AuthSigVerifyCostEd25519 }},
-"sig_verify_cost_secp256k1": {{ .AuthSigVerifyCostSecp256k1 }},
-"tx_sig_limit": {{ .AuthTxSigLimit }},
-"tx_size_cost_per_byte": {{ .AuthTxSizeCostPerByte }}
-}
-},
-"bank": {
-"balances": [],
-"supply": [],
-"params": {
-"default_send_enabled": true
-},
-"denom_metadata": [
-{
-"base": "{{ .DenomName }}",
-"denom_units": {{ .DenomUnits }},
-"description": "{{ .DenomDescription }}",
-"display": "{{ .DenomDisplay }}",
-"name": "{{ .DenomName }}",
-"symbol": "{{ .DenomSymbol }}",
-"uri": "",
-"uri_hash": ""
-}
-]
-},
-"staking": {
-"params": {
-"unbonding_time": "168h",
-"max_validators": {{ .StakingMaxValidators }},
-"max_entries": 7,
-"historical_entries": 10000,
-"bond_denom": "{{ .DenomName }}",
-"min_commission_rate": "0.000000000000000000"
-}
-},
-"genutil": {
-"gentxs": []
-},
-"crisis": {
-"constant_fee": {
-"denom": "{{ .DenomName }}",
-"amount": "{{ .CrisisConstantFeeAmount }}"
-}
-},
-"gov": {
-"deposit_params": {
-"min_deposit": [
-{
-"denom": "{{ .DenomName }}",
-"amount": "4000000000"
-}
-],
-"max_deposit_period": "336h"
-},
-"voting_params": {
-"voting_period": "4h"
-},
-"tally_params": {
-"quorum": "0.334000000000000000",
-"threshold": "0.500000000000000000",
-"veto_threshold": "0.334000000000000000"
-}
-},
-"mint": {
-"minter": {
-"inflation": "{{ .MintInflation }}",
-"annual_provisions": "{{ .MintAnnualProvisions }}"
-},
-"params": {
-"mint_denom": "{{ .DenomName }}",
-"inflation_rate_change": "{{ .MintInflationRateChange }}",
-"inflation_max": "{{ .MintInflationMax }}",
-"inflation_min": "{{ .MintInflationMin }}",
-"goal_bonded": "{{ .MintGoalBonded }}",
-"blocks_per_year": {{ .MintBlocksPerYear }}
-}
-},
-"distribution": {
-"params": {
-"community_tax": "{{ .DistributionCommunityTax }}",
-"base_proposer_reward": "{{ .DistributionBaseProposerReward }}",
-"bonus_proposer_reward": "{{ .DistributionBonusProposerReward }}",
-"withdraw_addr_enabled": {{ .DistributionWithdrawAddrEnabled }}
-},
-"fee_pool": {
-"community_pool": []
-}
-},
-"slashing": {
-"params": {
-"downtime_jail_duration": "{{ .SlashingDowntimeJailDuration }}",
-"min_signed_per_window": "{{ .SlashingMinSignedPerWindow }}",
-"signed_blocks_window": {{ .SlashingSignedBlocksWindow }},
-"slash_fraction_double_sign": "{{ .SlashingSlashFractionDoubleSign }}",
-"slash_fraction_downtime": "{{ .SlashingSlashFractionDowntime }}"
-}
-},
-"ibc": {
-"client_genesis": {
-"params": {
-"allowed_clients": {{ .IbcAllowedClients }}
-},
-"create_localhost": false,
-"next_client_sequence": "0"
-},
-"connection_genesis": {
-"params": {
-"max_expected_time_per_block": {{ .IbcMaxExpectedTimePerBlock }}
-}
-}
-}
-},
-"chain_id": "{{ .ChainID }}",
-"genesis_time": "{{ .GenesisTime }}",
-"initial_height": "{{ .InitialHeight }}",
-"consensus_params": {
-"block": {
-"max_bytes": {{ .ConsensusParamsBlockMaxBytes }},
-"max_gas": {{ .ConsensusParamsBlockMaxGas }}
-},
-"evidence": {
-"max_age_duration": "{{ .ConsensusParamsEvidenceMaxAgeDuration }}",
-"max_age_num_blocks": {{ .ConsensusParamsEvidenceMaxAgeNumBlocks }},
-"max_bytes": {{ .ConsensusParamsEvidenceMaxBytes }}
-},
-"validator": {
-"pub_key_types": {{ .ConsensusParamsValidatorPubKeyTypes }}
-}
-}
+        "max_memo_characters": "{{ .AuthMaxMemoCharacters }}",
+        "sig_verify_cost_ed25519": "{{ .AuthSigVerifyCostEd25519 }}",
+        "sig_verify_cost_secp256k1": "{{ .AuthSigVerifyCostSecp256k1 }}",
+        "tx_sig_limit": "{{ .AuthTxSigLimit }}",
+        "tx_size_cost_per_byte": "{{ .AuthTxSizeCostPerByte }}"
+      }
+    },
+    "authz": {
+      "authorization": []
+    },
+    "bank": {
+      "balances": [],
+      "supply": [],
+      "params": {
+        "default_send_enabled": true
+      },
+      "denom_metadata": [
+        {
+          "base": "{{ .DenomName }}",
+          "denom_units": {{ .DenomUnits }},
+          "description": "{{ .DenomDescription }}",
+          "display": "{{ .DenomDisplay }}",
+          "name": "{{ .DenomName }}",
+          "symbol": "{{ .DenomSymbol }}",
+          "uri": "",
+          "uri_hash": ""
+        }
+      ]
+    },
+    "capability": {
+      "index": "1",
+      "owners": []
+    },
+    "staking": {
+      "params": {
+        "unbonding_time": "168h",
+        "max_validators": "{{ .MaxValidators }}",
+        "max_entries": 7,
+        "historical_entries": 10000,
+        "bond_denom": "{{ .DenomName }}",
+        "min_commission_rate": "0.000000000000000000",
+        "validator_bond_factor": "-1.000000000000000000",
+        "global_liquid_staking_cap": "1.000000000000000000",
+        "validator_liquid_staking_cap": "1.000000000000000000"
+      },
+      "last_total_power": "0",
+      "last_validator_powers": [],
+      "validators": [],
+      "delegations": [],
+      "unbonding_delegations": [],
+      "redelegations": [],
+      "exported": false,
+      "tokenize_share_records": [],
+      "last_tokenize_share_record_id": "0",
+      "total_liquid_staked_tokens": "0",
+      "tokenize_share_locks": []
+    },
+    "genutil": {
+      "gen_txs": []
+    },
+    "consensus": null,
+    "crisis": {
+      "constant_fee": {
+        "denom": "{{ .DenomName }}",
+        "amount": "{{ .CrisisConstantFeeAmount }}"
+      }
+    },
+    "customparams": {
+      "staking_params": {
+        "min_self_delegation": "{{.MinSelfDelegation}}"
+      }
+    },
+    "globalfee": {
+      "params": {
+        "minimum_gas_prices": [],
+        "bypass_min_fee_msg_types": [
+          "/ibc.core.channel.v1.MsgRecvPacket",
+          "/ibc.core.channel.v1.MsgAcknowledgement",
+          "/ibc.core.client.v1.MsgUpdateClient",
+          "/ibc.core.channel.v1.MsgTimeout",
+          "/ibc.core.channel.v1.MsgTimeoutOnClose"
+        ],
+        "max_total_bypass_min_fee_msg_gas_usage": "1000000"
+      }
+    },
+    "gov": {
+      "params": {
+        "min_deposit": [
+          {
+            "denom": "{{ .DenomName }}",
+            "amount": "4000000000"
+          }
+        ],
+        "max_deposit_period": "336h",
+        "voting_period": "4h",
+        "min_initial_deposit_ratio": "0.000000000000000000",
+        "quorum": "0.400000000000000000",
+        "threshold": "0.500000000000000000",
+        "veto_threshold": "0.334000000000000000"
+      },
+      "proposals": [],
+      "starting_proposal_id": "1",
+      "votes": [],
+      "deposits": []
+    },
+    "mint": {
+      "minter": {
+        "inflation": "{{ .MintInflation }}",
+        "annual_provisions": "{{ .MintAnnualProvisions }}"
+      },
+      "params": {
+        "mint_denom": "{{ .DenomName }}",
+        "inflation_rate_change": "{{ .MintInflationRateChange }}",
+        "inflation_max": "{{ .MintInflationMax }}",
+        "inflation_min": "{{ .MintInflationMin }}",
+        "goal_bonded": "{{ .MintGoalBonded }}",
+        "blocks_per_year": "{{ .MintBlocksPerYear }}"
+      }
+    },
+    "distribution": {
+      "params": {
+        "community_tax": "{{ .DistributionCommunityTax }}",
+        "base_proposer_reward": "{{ .DistributionBaseProposerReward }}",
+        "bonus_proposer_reward": "{{ .DistributionBonusProposerReward }}",
+        "withdraw_addr_enabled": {{ .DistributionWithdrawAddrEnabled }}
+      },
+      "fee_pool": {
+        "community_pool": []
+      },
+      "delegator_starting_infos": [],
+      "delegator_withdraw_infos": [],
+      "outstanding_rewards": [],
+      "previous_proposer": "",
+      "validator_accumulated_commissions": [],
+      "validator_current_rewards": [],
+      "validator_historical_rewards": [],
+      "validator_slash_events": []
+    },
+    "evidence": {
+      "evidence": []
+    },
+    "slashing": {
+      "params": {
+        "downtime_jail_duration": "{{ .SlashingDowntimeJailDuration }}",
+        "min_signed_per_window": "{{ .SlashingMinSignedPerWindow }}",
+        "signed_blocks_window": "{{ .SlashingSignedBlocksWindow }}",
+        "slash_fraction_double_sign": "{{ .SlashingSlashFractionDoubleSign }}",
+        "slash_fraction_downtime": "{{ .SlashingSlashFractionDowntime }}"
+      },
+      "signing_infos": [],
+      "missed_blocks": []
+    },
+    "feegrant": {
+      "allowances": []
+    },
+    "feemodel": {
+      "min_gas_price": {
+        "amount": "{{ .FeemodelMinGasPrice }}",
+        "denom": "{{ .DenomName }}"
+      },
+      "params": {
+        "model": {
+          "escalation_start_fraction": "{{ .FeemodelEscalationStartFraction }}",
+          "initial_gas_price": "{{ .FeemodelInitialGasPrice }}",
+          "long_ema_block_length": "{{ .FeemodelLongEmaBlockLength }}",
+          "max_block_gas": "{{ .FeemodelMaxBlockGas }}",
+          "max_discount": "{{ .FeemodelMaxDiscount }}",
+          "max_gas_price_multiplier": "{{ .FeemodelMaxGasPriceMultiplier }}",
+          "short_ema_block_length": "{{ .FeemodelShortEmaBlockLength }}"
+        }
+      }
+    },
+    "ibc": {
+      "client_genesis": {
+        "clients": [],
+        "clients_consensus": [],
+        "clients_metadata": [],
+        "params": {
+          "allowed_clients": {{ .IbcAllowedClients }}
+        },
+        "create_localhost": false,
+        "next_client_sequence": "0"
+      },
+      "connection_genesis": {
+        "connections": [],
+        "client_connection_paths": [],
+        "next_connection_sequence": "0",
+        "params": {
+          "max_expected_time_per_block": "{{ .IbcMaxExpectedTimePerBlock }}"
+        }
+      },
+      "channel_genesis": {
+        "channels": [],
+        "acknowledgements": [],
+        "commitments": [],
+        "receipts": [],
+        "send_sequences": [],
+        "recv_sequences": [],
+        "ack_sequences": [],
+        "next_channel_sequence": "0"
+      }
+    },
+    "interchainaccounts": {
+      "controller_genesis_state": {
+        "active_channels": [],
+        "interchain_accounts": [],
+        "ports": [],
+        "params": {
+          "controller_enabled": true
+        }
+      },
+      "host_genesis_state": {
+        "active_channels": [],
+        "interchain_accounts": [],
+        "port": "icahost",
+        "params": {
+          "host_enabled": true,
+          "allow_messages": [
+            "*"
+          ]
+        }
+      }
+    },
+    "metaprotocols": {},
+    "transfer": {
+      "denom_traces": [],
+      "params": {
+        "receive_enabled": true,
+        "send_enabled": true
+      },
+      "port_id": "transfer"
+    },
+    "packetfowardmiddleware": {
+      "params": {
+        "fee_percentage": "0.000000000000000000"
+      },
+      "in_flight_packets": {}
+    },
+    "params": null,
+    "provider": {
+      "valset_update_id": "1",
+      "consumer_states": [],
+      "unbonding_ops": [],
+      "mature_unbonding_ops": null,
+      "valset_update_id_to_height": [],
+      "consumer_addition_proposals": [],
+      "consumer_removal_proposals": [],
+      "params": {
+        "template_client": {
+          "chain_id": "",
+          "trust_level": {
+            "numerator": "1",
+            "denominator": "3"
+          },
+          "trusting_period": "0s",
+          "unbonding_period": "0s",
+          "max_clock_drift": "10s",
+          "frozen_height": {
+            "revision_number": "0",
+            "revision_height": "0"
+          },
+          "latest_height": {
+            "revision_number": "0",
+            "revision_height": "0"
+          },
+          "proof_specs": [
+            {
+              "leaf_spec": {
+                "hash": "SHA256",
+                "prehash_key": "NO_HASH",
+                "prehash_value": "SHA256",
+                "length": "VAR_PROTO",
+                "prefix": "AA=="
+              },
+              "inner_spec": {
+                "child_order": [
+                  0,
+                  1
+                ],
+                "child_size": 33,
+                "min_prefix_length": 4,
+                "max_prefix_length": 12,
+                "empty_child": null,
+                "hash": "SHA256"
+              },
+              "max_depth": 0,
+              "min_depth": 0,
+              "prehash_key_before_comparison": false
+            },
+            {
+              "leaf_spec": {
+                "hash": "SHA256",
+                "prehash_key": "NO_HASH",
+                "prehash_value": "SHA256",
+                "length": "VAR_PROTO",
+                "prefix": "AA=="
+              },
+              "inner_spec": {
+                "child_order": [
+                  0,
+                  1
+                ],
+                "child_size": 32,
+                "min_prefix_length": 1,
+                "max_prefix_length": 1,
+                "empty_child": null,
+                "hash": "SHA256"
+              },
+              "max_depth": 0,
+              "min_depth": 0,
+              "prehash_key_before_comparison": false
+            }
+          ],
+          "upgrade_path": [
+            "upgrade",
+            "upgradedIBCState"
+          ],
+          "allow_update_after_expiry": false,
+          "allow_update_after_misbehaviour": false
+        },
+        "trusting_period_fraction": "0.66",
+        "ccv_timeout_period": "2419200s",
+        "init_timeout_period": "604800s",
+        "vsc_timeout_period": "3024000s",
+        "slash_meter_replenish_period": "3600s",
+        "slash_meter_replenish_fraction": "0.05",
+        "max_throttled_packets": "100000",
+        "consumer_reward_denom_registration_fee": {
+          "denom": "stake",
+          "amount": "10000000"
+        }
+      },
+      "validator_consumer_pubkeys": [],
+      "validators_by_consumer_addr": [],
+      "consumer_addrs_to_prune": [],
+      "init_timeout_timestamps": [],
+      "exported_vsc_send_timestamps": []
+    },
+    "upgrade": {},
+    "vesting": {},
+    "wasm": {
+      "params": {
+        "code_upload_access": {
+          "permission": "Everybody"
+        },
+        "instantiate_default_permission": "Everybody"
+      }
+    }
+  },
+  "chain_id": "{{ .ChainID }}",
+  "genesis_time": "{{ .GenesisTime }}",
+  "initial_height": "{{ .InitialHeight }}",
+  "consensus_params": {
+    "block": {
+      "max_bytes": "{{ .BlockMaxBytes }}",
+      "max_gas": "{{ .BlockMaxGas }}"
+    },
+    "evidence": {
+      "max_age_duration": "{{ .EvidenceMaxAgeDuration }}",
+      "max_age_num_blocks": "{{ .EvidenceMaxAgeNumBlocks }}",
+      "max_bytes": "{{ .EvidenceMaxBytes }}"
+    },
+    "validator": {
+      "pub_key_types": {{ .ValidatorPubKeyTypes }}
+    },
+    "version": {
+      "app": "0"
+    }
+  }
 }

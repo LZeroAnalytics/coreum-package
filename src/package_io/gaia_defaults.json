@@ -42,6 +42,16 @@
     "crisis": {
       "constant_fee_amount": 1000
     },
+    "feemodel": {
+      "min_gas_price": 0.0625,
+      "escalation_start_fraction": 0.8,
+      "initial_gas_price": 0.0625,
+      "long_ema_block_length": 1000,
+      "max_block_gas": 50000000,
+      "max_discount": 0.5,
+      "max_gas_price_multiplier": 1000.0,
+      "short_ema_block_length": 50
+    },
     "slashing": {
       "downtime_jail_duration": "600s",
       "min_signed_per_window": 0.500000000000000000,

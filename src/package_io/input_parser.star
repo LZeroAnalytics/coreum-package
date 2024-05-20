@@ -38,7 +38,9 @@ def apply_chain_defaults(chain, defaults):
             chain["modules"][module][key] = chain["modules"][module].get(key, value)
 
     # Apply defaults to participants
-    if "participants" in chain:
+    if "participants" not in chain:
+        chain["participants"] = defaults["participants"]
+    else:
         default_participant = defaults["participants"][0]
         participants = []
         for participant in chain["participants"]:

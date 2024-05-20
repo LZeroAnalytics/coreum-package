@@ -62,7 +62,6 @@
     },
     "staking": {
       "max_validators": 32,
-      "downtime_jail_duration": "60s",
       "min_self_delegation": 20000000000
     },
     "mint": {
