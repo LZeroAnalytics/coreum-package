@@ -49,6 +49,10 @@ def apply_chain_defaults(chain, defaults):
             participants.append(participant)
         chain["participants"] = participants
 
+    # Apply defaults to additional services
+    if "additional_services" not in chain:
+        chain["additional_services"] = defaults["additional_services"]
+
     return chain
 
 def validate_input_args(input_args):
