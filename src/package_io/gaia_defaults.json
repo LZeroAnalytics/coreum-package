@@ -25,11 +25,6 @@
     "evidence_max_bytes": 1048576,
     "validator_pub_key_types": ["ed25519"]
   },
-  "staking": {
-    "max_validators": 100,
-    "downtime_jail_duration": "600s",
-    "min_self_delegation": 20000000000
-  },
   "modules": {
     "auth": {
       "max_memo_characters": 256,
@@ -53,6 +48,10 @@
       "signed_blocks_window": 100,
       "slash_fraction_double_sign": 0.050000000000000000,
       "slash_fraction_downtime": 0.010000000000000000
+    },
+    "staking": {
+      "max_validators": 32,
+      "min_self_delegation": 20000000000
     },
     "mint": {
       "annual_provisions": 0.000000000000000000,

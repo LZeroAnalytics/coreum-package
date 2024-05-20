@@ -1,0 +1,223 @@
+{
+  "app_hash": "",
+  "app_state": {
+    "assetft": {
+      "params": {
+        "issue_fee": {
+          "amount": "10000000",
+          "denom": "udevcore"
+        },
+        "token_upgrade_decision_timeout": "0001-01-01T00:00:00Z",
+        "token_upgrade_grace_period": "604800s"
+      }
+    },
+    "assetnft": {
+      "params": {
+        "mint_fee": {
+          "amount": "0",
+          "denom": "udevcore"
+        }
+      }
+    },
+    "auth": {
+      "accounts": [],
+      "params": {
+        "max_memo_characters": "{{ .AuthMaxMemoCharacters }}",
+        "sig_verify_cost_ed25519": "{{ .AuthSigVerifyCostEd25519 }}",
+        "sig_verify_cost_secp256k1": "{{ .AuthSigVerifyCostSecp256k1 }}",
+        "tx_sig_limit": "{{ .AuthTxSigLimit }}",
+        "tx_size_cost_per_byte": "{{ .AuthTxSizeCostPerByte }}"
+      }
+    },
+    "authz": {
+      "authorization": []
+    },
+    "bank": {
+      "balances": [],
+      "supply": [],
+      "params": {
+        "default_send_enabled": true
+      },
+      "denom_metadata": [
+        {
+          "base": "{{ .DenomName }}",
+          "denom_units": {{ .DenomUnits }},
+          "description": "{{ .DenomDescription }}",
+          "display": "{{ .DenomDisplay }}",
+          "name": "{{ .DenomName }}",
+          "symbol": "{{ .DenomSymbol }}",
+          "uri": "",
+          "uri_hash": ""
+        }
+      ]
+    },
+    "capability": {
+      "index": "1",
+      "owners": []
+    },
+    "staking": {
+      "params": {
+        "unbonding_time": "168h",
+        "max_validators": "{{ .MaxValidators }}",
+        "max_entries": 7,
+        "historical_entries": 10000,
+        "bond_denom": "{{ .DenomName }}",
+        "min_commission_rate": "0.000000000000000000"
+      }
+    },
+    "genutil": {
+      "gen_txs": []
+    },
+    "cnft": {},
+    "consensus": null,
+    "crisis": {
+      "constant_fee": {
+        "denom": "{{ .DenomName }}",
+        "amount": "{{ .CrisisConstantFeeAmount }}"
+      }
+    },
+    "customparams": {
+      "staking_params": {
+        "min_self_delegation": "{{.MinSelfDelegation}}"
+      }
+    },
+    "delay": {},
+    "gov": {
+      "params": {
+        "min_deposit": [
+          {
+            "denom": "{{ .DenomName }}",
+            "amount": "4000000000"
+          }
+        ],
+        "max_deposit_period": "336h",
+        "voting_period": "4h",
+        "min_initial_deposit_ratio": "0.000000000000000000",
+        "quorum": "0.400000000000000000",
+        "threshold": "0.500000000000000000",
+        "veto_threshold": "0.334000000000000000"
+      },
+      "proposals": [],
+      "starting_proposal_id": "1",
+      "votes": [],
+      "deposits": []
+    },
+    "mint": {
+      "minter": {
+        "inflation": "{{ .MintInflation }}",
+        "annual_provisions": "{{ .MintAnnualProvisions }}"
+      },
+      "params": {
+        "mint_denom": "{{ .DenomName }}",
+        "inflation_rate_change": "{{ .MintInflationRateChange }}",
+        "inflation_max": "{{ .MintInflationMax }}",
+        "inflation_min": "{{ .MintInflationMin }}",
+        "goal_bonded": "{{ .MintGoalBonded }}",
+        "blocks_per_year": "{{ .MintBlocksPerYear }}"
+      }
+    },
+    "distribution": {
+      "params": {
+        "community_tax": "{{ .DistributionCommunityTax }}",
+        "base_proposer_reward": "{{ .DistributionBaseProposerReward }}",
+        "bonus_proposer_reward": "{{ .DistributionBonusProposerReward }}",
+        "withdraw_addr_enabled": {{ .DistributionWithdrawAddrEnabled }}
+      },
+      "fee_pool": {
+        "community_pool": []
+      },
+      "delegator_starting_infos": [],
+      "delegator_withdraw_infos": [],
+      "outstanding_rewards": [],
+      "previous_proposer": "",
+      "validator_accumulated_commissions": [],
+      "validator_current_rewards": [],
+      "validator_historical_rewards": [],
+      "validator_slash_events": []
+    },
+    "evidence": {
+      "evidence": []
+    },
+    "slashing": {
+      "params": {
+        "downtime_jail_duration": "{{ .SlashingDowntimeJailDuration }}",
+        "min_signed_per_window": "{{ .SlashingMinSignedPerWindow }}",
+        "signed_blocks_window": "{{ .SlashingSignedBlocksWindow }}",
+        "slash_fraction_double_sign": "{{ .SlashingSlashFractionDoubleSign }}",
+        "slash_fraction_downtime": "{{ .SlashingSlashFractionDowntime }}"
+      }
+    },
+    "feegrant": {
+      "allowances": []
+    },
+    "feemodel": {
+      "min_gas_price": {
+        "amount": "{{ .FeemodelMinGasPrice }}",
+        "denom": "{{ .DenomName }}"
+      },
+      "params": {
+        "model": {
+          "escalation_start_fraction": "{{ .FeemodelEscalationStartFraction }}",
+          "initial_gas_price": "{{ .FeemodelInitialGasPrice }}",
+          "long_ema_block_length": "{{ .FeemodelLongEmaBlockLength }}",
+          "max_block_gas": "{{ .FeemodelMaxBlockGas }}",
+          "max_discount": "{{ .FeemodelMaxDiscount }}",
+          "max_gas_price_multiplier": "{{ .FeemodelMaxGasPriceMultiplier }}",
+          "short_ema_block_length": "{{ .FeemodelShortEmaBlockLength }}"
+        }
+      }
+    },
+    "group": {},
+    "nft": {},
+    "params": null,
+    "ibc": {
+      "client_genesis": {
+        "params": {
+          "allowed_clients": {{ .IbcAllowedClients }}
+        },
+        "create_localhost": false,
+        "next_client_sequence": "0"
+      },
+      "connection_genesis": {
+        "params": {
+          "max_expected_time_per_block": "{{ .IbcMaxExpectedTimePerBlock }}"
+        }
+      }
+    },
+    "transfer": {
+      "denom_traces": [],
+      "params": {
+        "receive_enabled": true,
+        "send_enabled": true
+      },
+      "port_id": "transfer"
+    },
+    "upgrade": {},
+    "vesting": {},
+    "wasm": {
+      "params": {
+        "code_upload_access": {
+          "permission": "Everybody"
+        },
+        "instantiate_default_permission": "Everybody"
+      }
+    }
+  },
+  "chain_id": "{{ .ChainID }}",
+  "genesis_time": "{{ .GenesisTime }}",
+  "initial_height": "{{ .InitialHeight }}",
+  "consensus_params": {
+    "block": {
+      "max_bytes": "{{ .BlockMaxBytes }}",
+      "max_gas": "{{ .BlockMaxGas }}"
+    },
+    "evidence": {
+      "max_age_duration": "{{ .EvidenceMaxAgeDuration }}",
+      "max_age_num_blocks": "{{ .EvidenceMaxAgeNumBlocks }}",
+      "max_bytes": "{{ .EvidenceMaxBytes }}"
+    },
+    "validator": {
+      "pub_key_types": {{ .ValidatorPubKeyTypes }}
+    }
+  }
+}

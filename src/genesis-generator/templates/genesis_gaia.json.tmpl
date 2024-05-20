@@ -1,0 +1,137 @@
+{
+  "app_hash": "",
+  "app_state": {
+    "auth": {
+      "accounts": [],
+      "params": {
+        "max_memo_characters": {{ .AuthMaxMemoCharacters }},
+"sig_verify_cost_ed25519": {{ .AuthSigVerifyCostEd25519 }},
+"sig_verify_cost_secp256k1": {{ .AuthSigVerifyCostSecp256k1 }},
+"tx_sig_limit": {{ .AuthTxSigLimit }},
+"tx_size_cost_per_byte": {{ .AuthTxSizeCostPerByte }}
+}
+},
+"bank": {
+"balances": [],
+"supply": [],
+"params": {
+"default_send_enabled": true
+},
+"denom_metadata": [
+{
+"base": "{{ .DenomName }}",
+"denom_units": {{ .DenomUnits }},
+"description": "{{ .DenomDescription }}",
+"display": "{{ .DenomDisplay }}",
+"name": "{{ .DenomName }}",
+"symbol": "{{ .DenomSymbol }}",
+"uri": "",
+"uri_hash": ""
+}
+]
+},
+"staking": {
+"params": {
+"unbonding_time": "168h",
+"max_validators": {{ .StakingMaxValidators }},
+"max_entries": 7,
+"historical_entries": 10000,
+"bond_denom": "{{ .DenomName }}",
+"min_commission_rate": "0.000000000000000000"
+}
+},
+"genutil": {
+"gentxs": []
+},
+"crisis": {
+"constant_fee": {
+"denom": "{{ .DenomName }}",
+"amount": "{{ .CrisisConstantFeeAmount }}"
+}
+},
+"gov": {
+"deposit_params": {
+"min_deposit": [
+{
+"denom": "{{ .DenomName }}",
+"amount": "4000000000"
+}
+],
+"max_deposit_period": "336h"
+},
+"voting_params": {
+"voting_period": "4h"
+},
+"tally_params": {
+"quorum": "0.334000000000000000",
+"threshold": "0.500000000000000000",
+"veto_threshold": "0.334000000000000000"
+}
+},
+"mint": {
+"minter": {
+"inflation": "{{ .MintInflation }}",
+"annual_provisions": "{{ .MintAnnualProvisions }}"
+},
+"params": {
+"mint_denom": "{{ .DenomName }}",
+"inflation_rate_change": "{{ .MintInflationRateChange }}",
+"inflation_max": "{{ .MintInflationMax }}",
+"inflation_min": "{{ .MintInflationMin }}",
+"goal_bonded": "{{ .MintGoalBonded }}",
+"blocks_per_year": {{ .MintBlocksPerYear }}
+}
+},
+"distribution": {
+"params": {
+"community_tax": "{{ .DistributionCommunityTax }}",
+"base_proposer_reward": "{{ .DistributionBaseProposerReward }}",
+"bonus_proposer_reward": "{{ .DistributionBonusProposerReward }}",
+"withdraw_addr_enabled": {{ .DistributionWithdrawAddrEnabled }}
+},
+"fee_pool": {
+"community_pool": []
+}
+},
+"slashing": {
+"params": {
+"downtime_jail_duration": "{{ .SlashingDowntimeJailDuration }}",
+"min_signed_per_window": "{{ .SlashingMinSignedPerWindow }}",
+"signed_blocks_window": {{ .SlashingSignedBlocksWindow }},
+"slash_fraction_double_sign": "{{ .SlashingSlashFractionDoubleSign }}",
+"slash_fraction_downtime": "{{ .SlashingSlashFractionDowntime }}"
+}
+},
+"ibc": {
+"client_genesis": {
+"params": {
+"allowed_clients": {{ .IbcAllowedClients }}
+},
+"create_localhost": false,
+"next_client_sequence": "0"
+},
+"connection_genesis": {
+"params": {
+"max_expected_time_per_block": {{ .IbcMaxExpectedTimePerBlock }}
+}
+}
+}
+},
+"chain_id": "{{ .ChainID }}",
+"genesis_time": "{{ .GenesisTime }}",
+"initial_height": "{{ .InitialHeight }}",
+"consensus_params": {
+"block": {
+"max_bytes": {{ .ConsensusParamsBlockMaxBytes }},
+"max_gas": {{ .ConsensusParamsBlockMaxGas }}
+},
+"evidence": {
+"max_age_duration": "{{ .ConsensusParamsEvidenceMaxAgeDuration }}",
+"max_age_num_blocks": {{ .ConsensusParamsEvidenceMaxAgeNumBlocks }},
+"max_bytes": {{ .ConsensusParamsEvidenceMaxBytes }}
+},
+"validator": {
+"pub_key_types": {{ .ConsensusParamsValidatorPubKeyTypes }}
+}
+}
+}
