@@ -1,12 +1,10 @@
 def generate_genesis_files(plan, parsed_args):
     genesis_files = {}
     for chain in parsed_args["chains"]:
-        if chain["type"] == "coreum":
-            genesis_file, mnemonics, addresses, faucet_data = generate_genesis_file(plan, chain, "cored", "/root/.core/coreum-mainnet-1/config")
-        elif chain["type"] == "gaia":
-            genesis_file, mnemonics, addresses, faucet_data = generate_genesis_file(plan, chain, "gaiad", "/root/.gaia/config")
-        else:
-            fail("Unsupported chain type: " + chain["type"])
+        binary = "cored" if chain["type"] == "coreum" else "gaiad"
+        config_folder = "/root/.core/{}/config".format(chain["chain_id"]) if binary == "cored" else "/root/.gaia/config"
+        cored_args = "--chain-id {}".format(chain["chain_id"]) if binary == "cored" else ""
+        genesis_file, mnemonics, addresses, faucet_data = generate_genesis_file(plan, chain, binary, config_folder, cored_args)
 
         genesis_files[chain["name"]] = {
             "genesis_file": genesis_file,
@@ -16,7 +14,7 @@ def generate_genesis_files(plan, parsed_args):
         }
     return genesis_files
 
-def generate_genesis_file(plan, chain, binary, config_path):
+def generate_genesis_file(plan, chain, binary, config_path, cored_args):
     chain_id = chain["chain_id"]
     genesis_delay = chain["genesis_delay"]
     denom = chain["denom"]
@@ -25,6 +23,7 @@ def generate_genesis_file(plan, chain, binary, config_path):
     faucet = chain["faucet"]
     initial_height = chain["initial_height"]
     genesis_time = get_genesis_time(plan, genesis_delay)
+    min_self_delegation = chain["modules"]["staking"]["min_self_delegation"]
 
     faucet_data = None
 
@@ -53,18 +52,18 @@ def generate_genesis_file(plan, chain, binary, config_path):
             if participant.get("staking", True):
                 staking_amounts.append("{}{}".format(participant["staking_amount"], denom["name"]))
 
-    mnemonics, addresses, pub_keys = generate_keys(plan, total_count, chain_id, binary, config_path)
+    mnemonics, addresses, pub_keys = generate_keys(plan, total_count, chain_id, binary, config_path, cored_args)
 
     all_addresses = addresses[:]
     all_pub_keys = pub_keys[:]
 
-    init_genesis(plan, chain_id, binary, config_path)
+    init_genesis(plan, binary, config_path, cored_args)
 
-    add_accounts(plan, addresses, account_balances, binary)
+    add_accounts(plan, addresses, account_balances, binary, cored_args)
 
     # Add faucet if enabled
     if "faucet" in chain["additional_services"]:
-        faucet_mnemonic, faucet_address = add_faucet(plan, faucet["faucet_amount"], chain["name"], denom["name"], binary)
+        faucet_mnemonic, faucet_address = add_faucet(plan, faucet["faucet_amount"], chain["name"], denom["name"], binary, cored_args)
         faucet_data = {
             "mnemonic": faucet_mnemonic,
             "address": faucet_address
@@ -75,11 +74,7 @@ def generate_genesis_file(plan, chain, binary, config_path):
             if participant.get("staking", True):
                 staking_addresses.append(all_addresses.pop(0))
 
-    # Use coreum-mainnet-1 as chain id in order to use correct folder
-    if binary == "cored":
-        chain_id = "coreum-mainnet-1"
-
-    add_validators(plan, chain_id, staking_addresses, all_pub_keys[:len(staking_addresses)], staking_amounts, binary, config_path)
+    add_validators(plan, chain_id, staking_addresses, all_pub_keys[:len(staking_addresses)], staking_amounts, min_self_delegation, binary, config_path, cored_args)
 
     genesis_file = plan.store_service_files(
         service_name="genesis-service",
@@ -165,14 +160,14 @@ def start_genesis_service(plan, chain_id, genesis_time, denom, consensus_params,
         )
     )
 
-def generate_keys(plan, total_count, chain_id, binary, config_path):
+def generate_keys(plan, total_count, chain_id, binary, config_path, cored_args):
     addresses = []
     mnemonics = []
     pub_keys = []
     for i in range(total_count):
         keyring_flags = "--keyring-backend test"
 
-        keys_command = "{} keys add validator{} {} --output json".format(binary, i, keyring_flags)
+        keys_command = "{} keys add validator{} {} --output json {}".format(binary, i, keyring_flags, cored_args)
         key_result = plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
@@ -189,7 +184,7 @@ def generate_keys(plan, total_count, chain_id, binary, config_path):
         addresses.append(key_address)
         mnemonics.append(mnemonic)
 
-        init_command = "echo -e '{}' | {} init validator{} --recover".format(mnemonic, binary, i)
+        init_command = "echo -e '{}' | {} init validator{} --recover {}".format(mnemonic, binary, i, cored_args)
         plan.exec(
             service_name = "genesis-service",
             recipe = ExecRecipe(
@@ -220,8 +215,8 @@ def generate_keys(plan, total_count, chain_id, binary, config_path):
 
     return mnemonics, addresses, pub_keys
 
-def init_genesis(plan, chain_id, binary, config_path):
-    init_command = "{} init node1".format(binary)
+def init_genesis(plan, binary, config_path, cored_args):
+    init_command = "{} init node1 {}".format(binary, cored_args)
     plan.exec(
         service_name="genesis-service",
         recipe=ExecRecipe(
@@ -229,7 +224,7 @@ def init_genesis(plan, chain_id, binary, config_path):
         )
     )
 
-    genesis_path = "{}/genesis.json".format(config_path, chain_id)
+    genesis_path = "{}/genesis.json".format(config_path)
     move_command = "mv -f /tmp/genesis/genesis.json {}".format(genesis_path)
     plan.exec(
         service_name="genesis-service",
@@ -238,9 +233,9 @@ def init_genesis(plan, chain_id, binary, config_path):
         )
     )
 
-def add_accounts(plan, addresses, account_balances, binary):
+def add_accounts(plan, addresses, account_balances, binary, cored_args):
     for i, address in enumerate(addresses):
-        add_account_command = "{} genesis add-genesis-account {} {}".format(binary, address, account_balances[i])
+        add_account_command = "{} genesis add-genesis-account {} {} {}".format(binary, address, account_balances[i], cored_args)
         plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
@@ -248,11 +243,11 @@ def add_accounts(plan, addresses, account_balances, binary):
             )
         )
 
-def add_faucet(plan, faucet_amount, chain_name, denom_name, binary):
+def add_faucet(plan, faucet_amount, chain_name, denom_name, binary, cored_args):
 
     keyring_flags = "--keyring-backend test"
 
-    keys_command = "{} keys add faucet-{} {} --output json".format(binary, chain_name, keyring_flags)
+    keys_command = "{} keys add faucet-{} {} --output json {}".format(binary, chain_name, keyring_flags, cored_args)
     key_result = plan.exec(
         service_name="genesis-service",
         recipe=ExecRecipe(
@@ -267,7 +262,7 @@ def add_faucet(plan, faucet_amount, chain_name, denom_name, binary):
     faucet_address = key_result["extract.faucet_address"]
     faucet_mnemonic = key_result["extract.mnemonic"]
 
-    add_account_command = "{} genesis add-genesis-account {} {}{}".format(binary, faucet_address, faucet_amount, denom_name)
+    add_account_command = "{} genesis add-genesis-account {} {}{} {}".format(binary, faucet_address, faucet_amount, denom_name, cored_args)
     plan.exec(
         service_name="genesis-service",
         recipe=ExecRecipe(
@@ -278,7 +273,7 @@ def add_faucet(plan, faucet_amount, chain_name, denom_name, binary):
     return faucet_mnemonic, faucet_address
 
 
-def add_validators(plan, chain_id, addresses, pub_keys, staking_amounts, binary, config_path):
+def add_validators(plan, chain_id, addresses, pub_keys, staking_amounts, min_self_delegation, binary, config_path, cored_args):
 
     # Create gentx directory
     plan.exec(
@@ -293,7 +288,10 @@ def add_validators(plan, chain_id, addresses, pub_keys, staking_amounts, binary,
         filename = "gentx-validator{}.json".format(i)
         pub_key = pub_keys[i]
 
-        gentx_command = "{} genesis gentx validator{} {} {} --output-document {}/gentx/{} --chain-id {} --pubkey '{} '".format(binary, i, staking_amounts[i], keyring_flags, config_path, filename, chain_id, pub_key)
+        if binary == "cored":
+            gentx_command = "{} genesis gentx validator{} {} {} --min-self-delegation {} --output-document {}/gentx/{} --chain-id {} --pubkey '{} '".format(binary, i, staking_amounts[i], keyring_flags, min_self_delegation, config_path, filename, chain_id, pub_key)
+        else:
+            gentx_command = "{} genesis gentx validator{} {} {} --output-document {}/gentx/{} --chain-id {} --pubkey '{} '".format(binary, i, staking_amounts[i], keyring_flags, config_path, filename, chain_id, pub_key)
         plan.exec(
             service_name="genesis-service",
             recipe=ExecRecipe(
@@ -301,7 +299,7 @@ def add_validators(plan, chain_id, addresses, pub_keys, staking_amounts, binary,
             )
         )
 
-    collect_gentxs_command = "{} genesis collect-gentxs".format(binary)
+    collect_gentxs_command = "{} genesis collect-gentxs {}".format(binary, cored_args)
     plan.exec(
         service_name="genesis-service",
         recipe=ExecRecipe(

@@ -61,6 +61,8 @@ def validate_input_args(input_args):
             fail("Each chain must specify a 'name' and a 'type'.")
         if chain["name"] in chain_names:
             fail("Duplicate chain name found: " + chain["name"])
+        if chain["type"] != "coreum" and chain["type"] != "gaia":
+            fail("Unsupported chain type: "+ chain["type"])
         chain_names.append(chain["name"])
 
     for connection in input_args.get("connections", []):

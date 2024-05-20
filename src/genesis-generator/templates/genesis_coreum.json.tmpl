@@ -63,7 +63,14 @@
         "historical_entries": 10000,
         "bond_denom": "{{ .DenomName }}",
         "min_commission_rate": "0.000000000000000000"
-      }
+      },
+      "delegations": [],
+      "exported": false,
+      "last_total_power": "0",
+      "last_validator_powers": [],
+      "redelegations": [],
+      "unbonding_delegations": [],
+      "validators": []
     },
     "genutil": {
       "gen_txs": []
@@ -95,7 +102,10 @@
         "min_initial_deposit_ratio": "0.000000000000000000",
         "quorum": "0.400000000000000000",
         "threshold": "0.500000000000000000",
-        "veto_threshold": "0.334000000000000000"
+        "veto_threshold": "0.334000000000000000",
+        "burn_proposal_deposit_prevote": false,
+        "burn_vote_quorum": false,
+        "burn_vote_veto": true
       },
       "proposals": [],
       "starting_proposal_id": "1",
@@ -115,6 +125,25 @@
         "goal_bonded": "{{ .MintGoalBonded }}",
         "blocks_per_year": "{{ .MintBlocksPerYear }}"
       }
+    },
+    "monitoringp": {
+      "connectionChannelID": null,
+      "consumerClientID": null,
+      "monitoringInfo": null,
+      "params": {
+        "consumerChainID": "spn-1",
+        "consumerConsensusState": {
+          "nextValidatorsHash": "",
+          "root": {
+            "hash": ""
+          },
+          "timestamp": ""
+        },
+        "consumerRevisionHeight": "1",
+        "consumerUnbondingPeriod": "1814400",
+        "lastBlockHeight": "1"
+      },
+      "port_id": "monitoringp"
     },
     "distribution": {
       "params": {
@@ -145,7 +174,9 @@
         "signed_blocks_window": "{{ .SlashingSignedBlocksWindow }}",
         "slash_fraction_double_sign": "{{ .SlashingSlashFractionDoubleSign }}",
         "slash_fraction_downtime": "{{ .SlashingSlashFractionDowntime }}"
-      }
+      },
+        "signing_infos": []
+
     },
     "feegrant": {
       "allowances": []
