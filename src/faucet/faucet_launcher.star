@@ -1,8 +1,8 @@
-def launch_faucet(plan, chain_id, mnemonic, transfer_amount):
+def launch_faucet(plan, chain_name, chain_id, mnemonic, transfer_amount):
 
     # Get first node
     first_node = plan.get_service(
-        name = "node1"
+        name = "{}-node-1".format(chain_name)
     )
 
     mnemonic_data = {
@@ -16,11 +16,11 @@ def launch_faucet(plan, chain_id, mnemonic, transfer_amount):
                 data = mnemonic_data
             )
         },
-        name="faucet-mnemonic-file"
+        name="{}-faucet-mnemonic-file".format(chain_name)
     )
 
     plan.add_service(
-        name="faucet",
+        name="{}-faucet".format(chain_name),
         config = ServiceConfig(
             image = "tiljordan/coreum-faucet:latest",
             ports = {

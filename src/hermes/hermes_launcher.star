@@ -1,38 +1,48 @@
-def launch_hermes(plan, coreum_chain_id, gaia_chain_id, coreum_mnemonic, gaia_mnemonic):
-    coreum_account_prefix = "devcore"
-    coreum_relayer_coin_type = 990
-    peer_account_prefix = "cosmos"
-    telemetry_port = 7698
+def launch_hermes(plan, connection, genesis_files, parsed_args):
+    chain_a = connection["chain_a"]
+    chain_b = connection["chain_b"]
+    relayer_config = connection.get("relayer_config", {})
+    hermes_image = relayer_config.get("hermes_image", "tiljordan/hermes:latest")
 
-    # Get first node
-    first_node = plan.get_service(name = "node1")
+    chain_a_data = genesis_files[chain_a]
+    chain_b_data = genesis_files[chain_b]
 
-    # Get gaia node
-    gaia_node = plan.get_service(name = "gaia")
+    chain_a_config = get_chain_config(parsed_args, chain_a)
+    chain_b_config = get_chain_config(parsed_args, chain_b)
 
-    # Get node's rpc and grpc addresses
-    coreum_rpc_url = 'http://' + first_node.ip_address + ":" + str(first_node.ports["rpc"].number)
-    coreum_grpc_url = 'http://' + first_node.ip_address + ":" + str(first_node.ports["grpc"].number)
-    peer_rpc_url = 'http://' + gaia_node.ip_address + ":" + str(gaia_node.ports["rpc"].number)
-    peer_grpc_url = 'http://' + gaia_node.ip_address + ":" + str(gaia_node.ports["grpc"].number)
+    chain_a_id = chain_a_config["chain_id"]
+    chain_b_id = chain_b_config["chain_id"]
+
+    chain_a_mnemonic = chain_a_data["faucet"]["mnemonic"]
+    chain_b_mnemonic = chain_b_data["faucet"]["mnemonic"]
+
+    chain_a_node = plan.get_service(name="{}-node-1".format(chain_a))
+    chain_b_node = plan.get_service(name="{}-node-1".format(chain_b))
+
+    chain_a_rpc_url = "http://{}:{}".format(chain_a_node.ip_address, chain_a_node.ports['rpc'].number)
+    chain_a_grpc_url = "http://{}:{}".format(chain_a_node.ip_address, chain_a_node.ports['grpc'].number)
+    chain_b_rpc_url = "http://{}:{}".format(chain_b_node.ip_address, chain_b_node.ports['rpc'].number)
+    chain_b_grpc_url = "http://{}:{}".format(chain_b_node.ip_address, chain_b_node.ports['grpc'].number)
 
     config_data = {
-        "TelemetryPort": telemetry_port,
-        "CoreumChainID": coreum_chain_id,
-        "CoreumRPCURL": coreum_rpc_url,
-        "CoreumGRPCURL": coreum_grpc_url,
-        "CoreumAccountPrefix": coreum_account_prefix,
-        "CoreumGasPrice": {
-            "Amount": "0.0625",
-            "Denom": "udevcore"
+        "TelemetryPort": 7698,
+        "SourceChainID": chain_a_id,
+        "SourceRPCURL": chain_a_rpc_url,
+        "SourceGRPCURL": chain_a_grpc_url,
+        "SourceAccountPrefix": "cosmos" if chain_a_config["type"] == "gaia" else "devcore",
+        "SourceMaxGas": chain_a_config["consensus_params"]["block_max_gas"],
+        "SourceGasPrice": {
+            "Amount": chain_a_config["modules"]["feemodel"]["min_gas_price"],
+            "Denom": chain_a_config["denom"]["name"]
         },
-        "PeerChainID": gaia_chain_id,
-        "PeerRPCURL": peer_rpc_url,
-        "PeerGRPCURL": peer_grpc_url,
-        "PeerAccountPrefix": peer_account_prefix,
+        "PeerChainID": chain_b_id,
+        "PeerRPCURL": chain_b_rpc_url,
+        "PeerGRPCURL": chain_b_grpc_url,
+        "PeerAccountPrefix": "cosmos" if chain_b_config["type"] == "gaia" else "devcore",
+        "PeerMaxGas": chain_b_config["consensus_params"]["block_max_gas"],
         "PeerGasPrice": {
-            "Amount": "0.1",
-            "Denom": "stake"
+            "Amount": chain_b_config["modules"]["feemodel"]["min_gas_price"],
+            "Denom": chain_b_config["denom"]["name"]
         }
     }
 
@@ -43,87 +53,68 @@ def launch_hermes(plan, coreum_chain_id, gaia_chain_id, coreum_mnemonic, gaia_mn
                 data=config_data,
             )
         },
-        name="hermes-config",
+        name="hermes-config-{}-{}".format(chain_a, chain_b),
     )
 
     plan.add_service(
-        name="hermes",
+        name="hermes-{}-{}".format(chain_a, chain_b),
         config=ServiceConfig(
-            image="tiljordan/hermes:latest",
+            image=hermes_image,
             files={
                 "/root/.hermes": config_file
             },
             ports={
-                "telemetry": PortSpec(number=telemetry_port, transport_protocol="TCP", wait=None),
+                "telemetry": PortSpec(number=7698, transport_protocol="TCP", wait=None),
             },
             cmd=["sleep", "infinity"]
         ),
     )
 
-    # Import coreum mnemonic
+    # Import chain A mnemonic
     plan.exec(
-        service_name="hermes",
+        service_name="hermes-{}-{}".format(chain_a, chain_b),
         recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "echo '" + coreum_mnemonic + "' > /root/.hermes/coreum-mnemonic"]
+            command=["/bin/sh", "-c", "echo '{}' > /root/.hermes/{}-mnemonic".format(chain_a_mnemonic, chain_a)]
         )
     )
 
-    # Recreate coreum account
+    # Recreate chain A account
+    chain_a_hd_path = "--hd-path \"m/44'/990'/0'/0/0\"" if chain_a_config["type"] == "coreum" else ""
     plan.exec(
-        service_name="hermes",
+        service_name="hermes-{}-{}".format(chain_a, chain_b),
         recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "hermes keys add --chain " + coreum_chain_id + " --hd-path \"m/44'/" + str(coreum_relayer_coin_type) + "'/0'/0/0\" --mnemonic-file /root/.hermes/coreum-mnemonic"]
+            command=["/bin/sh", "-c", "hermes keys add --chain {} --key-name source-key {} --mnemonic-file /root/.hermes/{}-mnemonic".format(chain_a_id, chain_a_hd_path, chain_a)]
         )
     )
 
-    # Wait until first block is produced in cosmos hub
-    plan.wait(
-        service_name = "gaia",
-        recipe = GetHttpRequestRecipe(
-            port_id = "rpc",
-            endpoint = "/status",
-            extract = {
-                "block": ".result.sync_info.latest_block_height"
-            }
-        ),
-        field = "extract.block",
-        assertion = ">=",
-        target_value = "1",
-        interval = "1s",
-        timeout = "1m",
-        description = "Waiting for first cosmos hub block"
-    )
-
-    # Import gaia mnemonic
+    # Import chain B mnemonic
     plan.exec(
-        service_name="hermes",
+        service_name="hermes-{}-{}".format(chain_a, chain_b),
         recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "echo '" + gaia_mnemonic + "' > /root/.hermes/peer-mnemonic"]
+            command=["/bin/sh", "-c", "echo '{}' > /root/.hermes/{}-mnemonic".format(chain_b_mnemonic, chain_b)]
         )
     )
 
-    # Recreate gaia account
+    # Recreate chain B account
+    chain_b_hd_path = "--hd-path \"m/44'/990'/0'/0/0\"" if chain_b_config["type"] == "coreum" else ""
     plan.exec(
-        service_name="hermes",
+        service_name="hermes-{}-{}".format(chain_a, chain_b),
         recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "hermes keys add --chain " + gaia_chain_id + " --mnemonic-file /root/.hermes/peer-mnemonic"]
+            command=["/bin/sh", "-c", "hermes keys add --chain {} --key-name peer-key {} --mnemonic-file /root/.hermes/{}-mnemonic".format(chain_b_id, chain_b_hd_path, chain_b)]
         )
     )
 
-    # Create the IBC channel
+    # Create the IBC channel and start Hermes relayer
     plan.exec(
-        service_name="hermes",
+        service_name="hermes-{}-{}".format(chain_a, chain_b),
         recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "hermes create channel --a-chain " + coreum_chain_id + " --b-chain " + gaia_chain_id + " --a-port transfer --b-port transfer --new-client-connection --yes"]
+            command=["/bin/sh", "-c", "nohup sh -c 'hermes create channel --a-chain {} --b-chain {} --a-port transfer --b-port transfer --new-client-connection --yes && hermes start' > /dev/null 2>&1 &".format(chain_a_id, chain_b_id)]
         )
     )
 
-    #Start the Hermes relayer
-    plan.exec(
-        service_name="hermes",
-        recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "nohup hermes start > /dev/null 2>&1 &"]
-        )
-    )
+    plan.print("Hermes service started successfully for {} <-> {}".format(chain_a, chain_b))
 
-    plan.print("Hermes service started successfully")
+def get_chain_config(parsed_args, chain_name):
+    for chain in parsed_args["chains"]:
+        if chain["name"] == chain_name:
+            return chain

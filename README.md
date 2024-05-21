@@ -1,16 +1,17 @@
 # Coreum Package
 
-This is a [Kurtosis][kurtosis-repo] package developed by [LZero](https://www.lzeroanalytics.com) that will spin up a private Coreum testnet over Docker or Kubernetes. Kurtosis packages are entirely reproducible and composable, so this will work the same way over Docker or Kubernetes, in the cloud or locally on your machine.
+This is a [Kurtosis][kurtosis-repo] package developed by [LZero](https://www.lzeroanalytics.com) that will spin up a private Coreum or Cosmos Hub testnet over Docker or Kubernetes. Kurtosis packages are entirely reproducible and composable, so this will work the same way over Docker or Kubernetes, in the cloud or locally on your machine.
 
 You now have the ability to spin up a private [Coreum](https://www.coreum.com) testnet or public devnet/testnet with a single command. This package is designed to be used for testing, validation, and development, and is not intended for production use.
 
 Specifically, this [package][package-reference] will:
 
-1. Generate a genesis file with prefunded accounts and validators using [cored](https://github.com/CoreumFoundation/coreum)
-2. Spin up a Coreum network of *n* size using the genesis data generated above
+1. Generate genesis files with prefunded accounts and validators using [cored](https://github.com/CoreumFoundation/coreum) and [gaia](https://github.com/cosmos/gaia)
+2. Spin up networks of *n* size using the genesis data generated above
 3. Spin up a Grafana and Prometheus instances to observe the network
 4. Launch a [faucet](https://github.com/CoreumFoundation/faucet) service to create funded accounts or fund existing accounts
 5. Spin up a [Big Dipper](https://github.com/CoreumFoundation/big-dipper-2.0-cosmos) block explorer instance
+6. Launch a [hermes](https://hermes.informal.systems/) IBC relayer to connect testnets
 ## Quickstart
 
 
@@ -22,6 +23,7 @@ Specifically, this [package][package-reference] will:
    kurtosis run --enclave my-testnet github.com/LZeroAnalytics/coreum-package
    ```
 
+This command will spin up one coreum node, launch prometheus and grafana instances, and set up a faucet service.
 #### Run with your own configuration
 
 Kurtosis packages are parameterizable, meaning you can customize your network and its behavior to suit your needs by storing parameters in a file that you can pass in at runtime like so:
@@ -52,6 +54,19 @@ And if you need the logs for a service, simply run:
 kurtosis service logs my-testnet $SERVICE_NAME
 ```
 
+To stop a network run:
+
+```bash
+kurtosis enclave stop $THE_NETWORK_NAME
+```
+
+An easy way to clean all unused resources and shut down all networks:
+
+```bash
+kurtosis clean -a
+```
+
+
 Check out the full list of CLI commands [here](https://docs.kurtosis.com/cli)
 
 ## Debugging
@@ -73,101 +88,232 @@ kurtosis files download my-testnet genesis-file ~/Downloads
 To configure the package behaviour, you can modify your `network_params.yaml` file. The full YAML schema that can be passed in is as follows with the defaults provided:
 
 ````yaml
-general:
-   # The chain id used in the genesis file
-   # This should be coreum-devnet-1 in order to generate the correct genesis
-   chain_id: coreum-devnet-1
+# An array of unlimited number of chains
+# All parameters are optional except name and type
+chains:
 
-   # How long you want the network to wait before starting up in seconds
-   genesis_delay: 20
-   
-   # The password use for the key store on each node
-   key_password: LZeroPassword!
+   # The name of the chain
+   # Can be used to create connections between chains
+   - name: coreum
 
-  # The size of each block in bytes (default: 21MB)
-  # Too low decreases the network throughput
-  # Too high can cause network instability
-  block_size: 22020096
-  
-  # Total amount of gas that can be consumed by all transactions within a single block
-  max_gas: 50000000
+      # Allows values: coreum or gaia
+     type: coreum
 
-# Default parameters for the faucet
-faucet:
-   # The mnemonic to use for the faucet service
-   # If this mnemonic is specified, the corresponding address needs to be specified
-   mnemonic: fury gym tooth supply imitate fossil multiply future laundry spy century screen gloom net awake eager illness border hover tennis inspire nation regular ready
-   
-   # The address of the faucet
-   # This address needs to correspond to the specified mnemonic
-   address: devcore1nv9l6qmv3teux3pgl49vxddrcja3c4fejnhz96
-   
-   # The balance of the faucet service
-   faucet_amount: 100000000000000
-   
-   # The amount to transfer for each each /fund request made to the service
-   transfer_amount: 100000000
+      # Chain ID has to be coreum-devnet-1 for coreum
+      # Can be any id for gaia and should be set when creating more than 1 gaia chain
+     chain_id: coreum-devnet-1
 
-# Default parameters for validators and staking
-staking:
-   # The minimum amount of stake needed to become a validator
-   min_self_delegation: 20000000000
-   
-   # The maximum number of validators allowed in the network
-   max_validators: 32
-   
-   # The duration after which a validator is jailed after being offline
-   downtime_jail_duration: 60s
+      # How long you want the network to wait before starting up in seconds
+     genesis_delay: 20
 
-# Default parameters for governance
-governance:
-   # The minimum amount to deposit to create a governance proposal
-   min_deposit: 4000000000
-   
-   # The amount of time participants can vote on a proposal
-   voting_period: 4h
+      # The initial block height of the chain
+     initial_height: 1
 
-# Default parameters for Cosmos hub (gaia)
-gaia:
-   # The chain id of the cosmos hub network
-   chain_id: cosmos-lzero-testnet
-   
-   # The minimum amount of fess required for transactions
-   # 0.01 photino tokens required per unit of gas
-   # 0.001 stak tokens required per unit of gas
-   minimum_gas_price: 0.01photino,0.001stake
-   num_validators: 4
+      # Parameters about the denomination (denom) used in the chain
+      # Values should correspond to each other
+     denom:
+        # The base denomination name used in the chain
+        name: udevcore
 
-# Additional services to launch
-# Faucet: Gives access to an api to fund addresses
-# Bdjuno: The Big Dipper block explorer based on bdjuno and postgres
-# Prometheus: Provides prometheus service for accessing node metrics
-# Grafana: Dashboard that pulls data from prometheus
-# Gaia: The Cosmos Hub blockchain - spins up one node with three accounts
-# Hermes: A IBC relay that connects gaia and the coreum testnet
-additional_services:
-   - faucet
-   - bdjuno
-   - prometheus
-   - grafana
-   - gaia
-   - hermes
+        # The display name of the denomination
+        display: devcore
 
-# Specification of the participants in the network
-# Each participant is a template for nodes and allows to create customisable networks
-participants:
-     # The Docker image that should be used for the Coreum node
-   - image: tiljordan/coreum-cored:latest
+        # The symbol representing the denomination
+        symbol: udevcore
+
+        # A description of the denomination
+        description: udevcore coin
+
+        # Units of the denomination with different exponents
+        units:
+           # The smallest unit of the denomination
+           - denom: udevcore
+             exponent: 0
+           # A larger unit of the denomination
+           - denom: devcore
+             exponent: 6
+
+      # Faucet related parameters for distributing tokens
+     faucet:
+
+        # The amount that the faucet account should have
+        faucet_amount: 100000000000000
+
+        # How much tokens should be transferred on each API call
+        # Only supported in Coreum networks
+        transfer_amount: 100000000
+
+      # Consensus parameters that define the blockchain's rules
+     consensus_params:
+
+        # The maximum block size in bytes (default: 21MB)
+        block_max_bytes: 22020096
+
+        # The maximum gas that can be consumed by a block
+        block_max_gas: 50000000
+
+        # The maximum age of evidence in nanoseconds
+        evidence_max_age_duration: 172800000000000
+
+        # The maximum number of blocks for which evidence is valid
+        evidence_max_age_num_blocks: 100000
+
+        # The maximum size of evidence in bytes
+        evidence_max_bytes: 1048576
+
+        # Which public key types are allowed for validators
+        validator_pub_key_types:
+           - ed25519
+
+      # Modules and their configurations
+     modules:
+        auth:
+           # Maximum number of characters allowed in transaction memo
+           max_memo_characters: 256
+
+           # Cost of verifying a signature using ed25519 algorithm
+           sig_verify_cost_ed25519: 1000
+
+           # Cost of verifying a signature using secp256k1 algorithm
+           sig_verify_cost_secp256k1: 1000
+
+           # Maximum number of signatures allowed per transaction
+           tx_sig_limit: 7
+
+           # Cost per byte of transaction size
+           tx_size_cost_per_byte: 10
+
+        distribution:
+           # Base reward for proposers
+           base_proposer_reward: 0.010000000000000000
+
+           # Bonus reward for proposers
+           bonus_proposer_reward: 0.040000000000000000
+
+           # Community tax rate
+           community_tax: 0.050000000000000000
+
+           # Whether withdrawal addresses are enabled
+           withdraw_addr_enabled: true
+
+        crisis:
+           # The constant fee amount for the crisis module
+           constant_fee_amount: 500000000000
+
+        feemodel:
+           # Minimum gas price
+           min_gas_price: 0.0625
+
+           # Fraction at which gas price escalation starts
+           escalation_start_fraction: 0.8
+
+           # Initial gas price
+           initial_gas_price: 0.0625
+
+           # Length of the long EMA (Exponential Moving Average) block
+           long_ema_block_length: 1000
+
+           # Maximum gas that can be consumed in a block
+           max_block_gas: 50000000
+
+           # Maximum discount allowed on gas price
+           max_discount: 0.5
+
+           # Maximum multiplier for gas price
+           max_gas_price_multiplier: 1000.0
+
+           # Length of the short EMA (Exponential Moving Average) block
+           short_ema_block_length: 50
+
+        slashing:
+           # Duration for which a validator is jailed for downtime
+           downtime_jail_duration: 60s
+
+           # Minimum fraction of blocks that must be signed within a window
+           min_signed_per_window: 0.500000000000000000
+
+           # Number of blocks in the slashing window
+           signed_blocks_window: 34000
+
+           # Fraction of stake slashed for double signing
+           slash_fraction_double_sign: 0.050000000000000000
+
+           # Fraction of stake slashed for downtime
+           slash_fraction_downtime: 0.005000000000000000
+
+        staking:
+           # Maximum number of validators
+           max_validators: 32
+
+           # Minimum self-delegation amount
+           min_self_delegation: 20000000000
+
+        mint:
+           # Annual provisions for the mint module
+           annual_provisions: 0.000000000000000000
+
+           # Inflation rate
+           inflation: 0.100000000000000000
+
+           # Number of blocks per year
+           blocks_per_year: 17900000
+
+           # Goal bonded rate
+           goal_bonded: 0.670000000000000000
+
+           # Maximum inflation rate
+           inflation_max: 0.200000000000000000
+
+           # Minimum inflation rate
+           inflation_min: 0.000000000000000000
+
+           # Rate of change for inflation
+           inflation_rate_change: 0.130000000000000000
+
+        ibc:
+           # Allowed IBC clients
+           allowed_clients:
+              - 06-solomachine
+              - 07-tendermint
+              - 09-localhost
+
+           # Maximum expected time per block
+           max_expected_time_per_block: 30000000000
+
+     # Array of node templates (participants)
+     participants:
+        # Image used for these nodes
+        - image: tiljordan/coreum-cored:latest
+
+           # Account balance for the participant
+          account_balance: 100000000000
+
+           # Staking amount for the participant
+          staking_amount: 20000000000
+
+           # Number of nodes to launch for this template
+          count: 1
+
+           # Whether the participant is a staking validator
+          staking: true
+
+     # Additional services to be deployed with the chain
+     # Gaia only support prometheus and grafana currently 
+     additional_services:
+        - faucet
+        - bdjuno
+        - prometheus
+        - grafana
+
+# Connections between different chains
+# Each connection requires at least the two chain names as specified above
+connections:
+   - chain_a: chain_name_1
+     chain_b: chain_name_2
      
-     # The balance of each account (in udevcore)
-     account_balance: 100000000000
-     
-     # The amount that is staked to become a validator
-     # Needs to be larger than the minimum self delegation
-     staking_amount: 20000000000
-
-     # Count of nodes to spin up for this participant
-     count: 3
+     # Currently only supports hermes but can specify custom image
+     relayer_config:
+        hermes_image: tiljordan/hermes:latest
 ````
 
 #### Example configurations
@@ -178,33 +324,12 @@ The default configurations and all example configurations can be found in the [s
    <summary>A 2-node bare bones Coreum network without additional services</summary>
 
 ```yaml
-participants:
-  - image: tiljordan/coreum-cored:latest
-    account_balance: 100000000000
-    staking_amount: 20000000000
-    count: 2
-```
-</details>
-
-<details>
-   <summary>A 5-node Coreum network with different node images used</summary>
-
-```yaml
-additional_services:
-  - faucet
-  - bdjuno
-  - prometheus
-  - grafana
-
-participants:
-  - image: tiljordan/coreum-cored:latest
-    account_balance: 100000000000
-    staking_amount: 20000000000
-    count: 2
-  - image: coreumfoundation/cored:v3.0.3
-    account_balance: 200000000000
-    staking_amount: 20000000000
-    count: 3
+chains:
+   - name: coreum-testnet
+     type: coreum
+     participants:
+        - count: 2
+     additional_services: []
 ```
 </details>
 
@@ -212,40 +337,45 @@ participants:
 <summary>A 3-node Coreum network with block size of 50MB</summary>
 
 ```yaml
-general:
-  block_size: 52428800
-
-additional_services:
-  - faucet
-  - bdjuno
-  - prometheus
-  - grafana
-
-participants:
-  - image: tiljordan/coreum-cored:latest
-    account_balance: 100000000000
-    staking_amount: 20000000000
-    count: 3
+chains:
+   - name: coreum-testnet
+     type: coreum
+     consensus_parama:
+        block_max_bytes: 52428800
+     participants:
+        - count: 3
 ```
 </details>
 
 <details>
-<summary>A 2-node Coreum network with gaia and hermes</summary>
+<summary>A 1-node Coreum and Gaia chain connected using IBC</summary>
 
 ```yaml
-additional_services:
-  - gaia
-  - hermes
+chains:
+   - name: coreum
+     type: coreum
+   - name: gaia
+     type: gaia
+connections:
+   - chain_a: coreum
+     chain_b: gaia
+```
+</details>
 
-gaia:
-  chain_id: cosmos-lzero-testnet
-  minimum_gas_price: 0.1stake
+<details>
+<summary>Two gaia chains connected using IBC</summary>
 
-participants:
-- image: tiljordan/coreum-cored:latest
-  account_balance: 100000000000
-  staking_amount: 20000000000
-  count: 2
+```yaml
+chains:
+   - name: gaia-1
+     type: gaia
+     chain_id: gaia-chain-1
+   - name: gaia-2
+     type: gaia
+     chain_id: gaia-chain-2
+connections:
+   - chain_a: gaia-1
+     chain_b: gaia-2
 ```
 </details>
 
@@ -310,7 +440,6 @@ When you're happy with your changes:
 1. Create a PR
 2. Add one of the maintainers of the repo as a "Review Request":
    * `tiljrd` (LZero)
-   * `mistrz-g` (LZero)
    
 3. Once everything works, merge!
 

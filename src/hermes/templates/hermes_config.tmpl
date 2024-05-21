@@ -32,17 +32,17 @@ host = '0.0.0.0'
 port = {{ .TelemetryPort }}
 
 [[chains]]
-id = '{{ .CoreumChainID }}'
-rpc_addr = '{{ .CoreumRPCURL }}'
+id = '{{ .SourceChainID }}'
+rpc_addr = '{{ .SourceRPCURL }}'
 rpc_timeout = '30s'
-grpc_addr = '{{ .CoreumGRPCURL }}'
+grpc_addr = '{{ .SourceGRPCURL }}'
 event_source = { mode = 'pull', interval = '1s' }
-account_prefix = '{{ .CoreumAccountPrefix }}'
-key_name = 'coreum-key'
+account_prefix = '{{ .SourceAccountPrefix }}'
+key_name = 'source-key'
 store_prefix = 'ibc'
 default_gas = 100000
-max_gas = 4000000
-gas_price = { price = {{ .CoreumGasPrice.Amount }}, denom = '{{ .CoreumGasPrice.Denom }}' }
+max_gas = {{ .SourceMaxGas }}
+gas_price = { price = {{ .SourceGasPrice.Amount }}, denom = '{{ .SourceGasPrice.Denom }}' }
 gas_multiplier = 1.5
 clock_drift = '60s'
 trust_threshold = { numerator = '1', denominator = '3' }
@@ -59,7 +59,7 @@ account_prefix = '{{ .PeerAccountPrefix }}'
 key_name = 'peer-key'
 store_prefix = 'ibc'
 default_gas = 100000
-max_gas = 4000000
+max_gas = {{ .PeerMaxGas }}
 gas_price = { price = {{ .PeerGasPrice.Amount }}, denom = '{{ .PeerGasPrice.Denom }}' }
 gas_multiplier = 1.5
 clock_drift = '60s'

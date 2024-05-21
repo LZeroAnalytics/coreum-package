@@ -1,25 +1,19 @@
 chains:
-  - name: coreum
-    type: coreum
-    chain_id: coreum-devnet-1
+  - name: gaia
+    type: gaia
+    chain_id: cosmos-lzero-testnet
     genesis_delay: 20
     initial_height: 1
-
     denom:
-      name: udevcore
-      display: devcore
-      symbol: udevcore
-      description: udevcore coin
+      name: stake
+      display: stake
+      symbol: stake
+      description: stake coin
       units:
-        - denom: udevcore
+        - denom: stake
           exponent: 0
-        - denom: devcore
-          exponent: 6
-
     faucet:
       faucet_amount: 100000000000000
-      transfer_amount: 100000000
-
     consensus_params:
       block_max_bytes: 22020096
       block_max_gas: 50000000
@@ -28,24 +22,20 @@ chains:
       evidence_max_bytes: 1048576
       validator_pub_key_types:
         - ed25519
-
     modules:
       auth:
         max_memo_characters: 256
-        sig_verify_cost_ed25519: 1000
+        sig_verify_cost_ed25519: 590
         sig_verify_cost_secp256k1: 1000
         tx_sig_limit: 7
         tx_size_cost_per_byte: 10
-
       distribution:
-        base_proposer_reward: 0.010000000000000000
-        bonus_proposer_reward: 0.040000000000000000
-        community_tax: 0.050000000000000000
+        base_proposer_reward: 0.000000000000000000
+        bonus_proposer_reward: 0.000000000000000000
+        community_tax: 0.020000000000000000
         withdraw_addr_enabled: true
-
       crisis:
-        constant_fee_amount: 500000000000
-
+        constant_fee_amount: 1000
       feemodel:
         min_gas_price: 0.0625
         escalation_start_fraction: 0.8
@@ -55,43 +45,35 @@ chains:
         max_discount: 0.5
         max_gas_price_multiplier: 1000.0
         short_ema_block_length: 50
-
       slashing:
-        downtime_jail_duration: 60s
+        downtime_jail_duration: 600s
         min_signed_per_window: 0.500000000000000000
-        signed_blocks_window: 34000
+        signed_blocks_window: 100
         slash_fraction_double_sign: 0.050000000000000000
-        slash_fraction_downtime: 0.005000000000000000
-
+        slash_fraction_downtime: 0.010000000000000000
       staking:
         max_validators: 32
         min_self_delegation: 20000000000
-
       mint:
         annual_provisions: 0.000000000000000000
-        inflation: 0.100000000000000000
-        blocks_per_year: 17900000
+        inflation: 0.130000000000000000
+        blocks_per_year: 6311520
         goal_bonded: 0.670000000000000000
         inflation_max: 0.200000000000000000
-        inflation_min: 0.000000000000000000
+        inflation_min: 0.070000000000000000
         inflation_rate_change: 0.130000000000000000
-
       ibc:
         allowed_clients:
           - 06-solomachine
           - 07-tendermint
           - 09-localhost
         max_expected_time_per_block: 30000000000
-
     participants:
-      - image: tiljordan/coreum-cored:latest
+      - image: tiljordan/gaia:v15.2.0
         account_balance: 100000000000
         staking_amount: 20000000000
         count: 1
         staking: true
-
     additional_services:
-      - faucet
-      - bdjuno
       - prometheus
       - grafana
