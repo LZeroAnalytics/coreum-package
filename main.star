@@ -19,8 +19,8 @@ def run(plan, args):
     service_launchers = {
         "prometheus": prometheus.launch_prometheus,
         "grafana": grafana.launch_grafana,
-        #"bdjuno": bdjuno.launch_bdjuno,
         "faucet": faucet.launch_faucet,
+        "bdjuno": bdjuno.launch_bdjuno,
         #"hermes": hermes.launch_hermes
     }
 
@@ -73,7 +73,7 @@ def run(plan, args):
                     if relayer_mnemonic:
                         service_launchers[service](plan, chain_id, other_chain_id, mnemonics[0], relayer_mnemonic)
                 else:
-                    service_launchers[service](plan)
+                    service_launchers[service](plan, chain_name)
 
     plan.print(genesis_files)
     # prometheus_url = None

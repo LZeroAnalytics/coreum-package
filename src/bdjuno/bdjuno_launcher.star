@@ -1,32 +1,35 @@
-def launch_bdjuno(plan):
-    postgres_service = launch_postgres_service(plan)
+def launch_bdjuno(plan, chain_name):
+    postgres_service = launch_postgres_service(plan, chain_name)
 
     # Get first node
     first_node = plan.get_service(
-        name = "node1"
+        name = "{}-node-1".format(chain_name)
     )
 
     # Launch the bdjuno service
-    launch_bdjuno_service(plan, postgres_service, first_node)
+    launch_bdjuno_service(plan, postgres_service, first_node, chain_name)
 
     # Launch hasura service
-    harusa_service = launch_hasura_service(plan, postgres_service)
+    harusa_service = launch_hasura_service(plan, postgres_service, chain_name)
 
     # Launch big dipper UI block explorer
-    big_dipper_service = launch_big_dipper(plan)
+    big_dipper_service = launch_big_dipper(plan, chain_name)
 
     # Launch nginx reverse proxy to access explorer
-    launch_nginx(plan, big_dipper_service, harusa_service, first_node)
+    launch_nginx(plan, big_dipper_service, harusa_service, first_node, chain_name)
 
     plan.print("BdJuno and Hasura started successfully")
 
 
-def launch_postgres_service(plan):
+def launch_postgres_service(plan, chain_name):
 
     # Upload SQL schema files to Kurtosis
-    schema_files_artifact = plan.upload_files(src="github.com/CoreumFoundation/bdjuno/database/schema", name="schema-files")
+    schema_files_artifact = plan.upload_files(
+        src="github.com/CoreumFoundation/bdjuno/database/schema",
+        name="{}-schema-files".format(chain_name)
+    )
     postgres_service = plan.add_service(
-        name="bdjuno-postgres",
+        name="{}-bdjuno-postgres".format(chain_name),
         config = ServiceConfig(
             image = "postgres:14.5",
             ports = {
@@ -51,7 +54,7 @@ def launch_postgres_service(plan):
     )
 
     plan.exec(
-        service_name="bdjuno-postgres",
+        service_name="{}-bdjuno-postgres".format(chain_name),
         recipe=ExecRecipe(
             command=["/bin/sh", "-c", init_db_command]
         )
@@ -60,7 +63,7 @@ def launch_postgres_service(plan):
     return postgres_service
 
 
-def launch_bdjuno_service(plan, postgres_service, node_service):
+def launch_bdjuno_service(plan, postgres_service, node_service, chain_name):
     # Render the configuration file
     bdjuno_config_data = {
         "ChainPrefix": "devcore",
@@ -77,16 +80,16 @@ def launch_bdjuno_service(plan, postgres_service, node_service):
                 data = bdjuno_config_data
             )
         },
-        name="bdjuno-config"
+        name="{}-bdjuno-config".format(chain_name)
     )
 
     # Retrieve the genesis file
     genesis_file_artifact = plan.get_files_artifact(
-        name = "genesis-file"
+        name = "{}-genesis-file".format(chain_name)
     )
 
     bdjuno_service = plan.add_service(
-        name = "bdjuno-service",
+        name = "{}-bdjuno-service".format(chain_name),
         config = ServiceConfig(
             image = "coreumfoundation/bdjuno:latest",
             ports = {
@@ -102,7 +105,7 @@ def launch_bdjuno_service(plan, postgres_service, node_service):
 
     # Parse the genesis file
     plan.exec(
-        service_name = "bdjuno-service",
+        service_name = "{}-bdjuno-service".format(chain_name),
         recipe = ExecRecipe(
             command = ["/bin/sh", "-c", "bdjuno parse genesis-file --genesis-file-path /tmp/genesis/genesis.json --home /bdjuno/.bdjuno"]
         )
@@ -110,7 +113,7 @@ def launch_bdjuno_service(plan, postgres_service, node_service):
 
     # Start bdjuno
     plan.exec(
-        service_name = "bdjuno-service",
+        service_name = "{}-bdjuno-service".format(chain_name),
         recipe = ExecRecipe(
             command = ["/bin/sh", "-c", "nohup bdjuno start --home /bdjuno/.bdjuno > /dev/null 2>&1 &"]
         )
@@ -119,9 +122,9 @@ def launch_bdjuno_service(plan, postgres_service, node_service):
     return bdjuno_service
 
 
-def launch_hasura_service(plan, postgres_service):
+def launch_hasura_service(plan, postgres_service, chain_name):
     hasura_service = plan.add_service(
-        name = "hasura",
+        name = "{}-hasura".format(chain_name),
         config = ServiceConfig(
             image = "coreumfoundation/hasura:latest",
             ports = {
@@ -143,9 +146,9 @@ def launch_hasura_service(plan, postgres_service):
     return hasura_service
 
 
-def launch_big_dipper(plan):
+def launch_big_dipper(plan,chain_name):
     big_dipper_service = plan.add_service(
-        name="big-dipper-service",
+        name="{}-big-dipper-service".format(chain_name),
         config=ServiceConfig(
             image="tiljordan/big-dipper-ui:latest",
             env_vars={
@@ -162,7 +165,7 @@ def launch_big_dipper(plan):
 
 
 
-def launch_nginx(plan, big_dipper_service, harusa_service, node_service):
+def launch_nginx(plan, big_dipper_service, harusa_service, node_service, chain_name):
     big_dipper_ip = big_dipper_service.ip_address
     big_dipper_port = big_dipper_service.ports["ui"].number
     node_ip = node_service.ip_address
@@ -185,11 +188,11 @@ def launch_nginx(plan, big_dipper_service, harusa_service, node_service):
                 data = nginx_config_data
             )
         },
-        name="nginx-config"
+        name="{}-nginx-config".format(chain_name)
     )
 
     plan.add_service(
-        name="block-explorer",
+        name="{}-block-explorer".format(chain_name),
         config=ServiceConfig(
             image="nginx:latest",
             files={
