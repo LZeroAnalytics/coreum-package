@@ -21,7 +21,6 @@ def run(plan, args):
         "grafana": grafana.launch_grafana,
         "faucet": faucet.launch_faucet,
         "bdjuno": bdjuno.launch_bdjuno,
-        #"hermes": hermes.launch_hermes
     }
 
     # Launch additional services for each chain
@@ -66,14 +65,11 @@ def run(plan, args):
                     faucet_mnemonic = genesis_files[chain_name]["faucet"]["mnemonic"]
                     transfer_amount = chain["faucet"]["transfer_amount"]
                     service_launchers[service](plan, chain_name, chain_id, faucet_mnemonic, transfer_amount)
-                elif service == "hermes":
-                    other_chain_id = parsed_args["chains"][1]["chain_id"] if len(parsed_args["chains"]) > 1 else None
-                    mnemonics = genesis_files[chain_name]["mnemonics"]
-                    relayer_mnemonic = genesis_files.get(parsed_args["chains"][1]["name"], {}).get("mnemonics")[0] if other_chain_id else None
-                    if relayer_mnemonic:
-                        service_launchers[service](plan, chain_id, other_chain_id, mnemonics[0], relayer_mnemonic)
                 else:
                     service_launchers[service](plan, chain_name)
+
+    for connection in parsed_args["connections"]:
+        hermes.launch_hermes(plan, connection, genesis_files, parsed_args)
 
     plan.print(genesis_files)
     # prometheus_url = None

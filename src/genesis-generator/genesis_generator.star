@@ -62,12 +62,11 @@ def generate_genesis_file(plan, chain, binary, config_path, cored_args):
     add_accounts(plan, addresses, account_balances, binary, cored_args)
 
     # Add faucet if enabled
-    if "faucet" in chain["additional_services"]:
-        faucet_mnemonic, faucet_address = add_faucet(plan, faucet["faucet_amount"], chain["name"], denom["name"], binary, cored_args)
-        faucet_data = {
-            "mnemonic": faucet_mnemonic,
-            "address": faucet_address
-        }
+    faucet_mnemonic, faucet_address = add_faucet(plan, faucet["faucet_amount"], chain["name"], denom["name"], binary, cored_args)
+    faucet_data = {
+        "mnemonic": faucet_mnemonic,
+        "address": faucet_address
+    }
 
     for participant in chain["participants"]:
         for _ in range(participant["count"]):
