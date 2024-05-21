@@ -14,15 +14,13 @@ def run(plan, args):
 
     genesis_files = genesis_generator.generate_genesis_files(plan, parsed_args)
 
-    plan.print(genesis_files)
-
     networks = network_launcher.launch_network(plan, genesis_files, parsed_args)
 
     service_launchers = {
         "prometheus": prometheus.launch_prometheus,
         "grafana": grafana.launch_grafana,
         #"bdjuno": bdjuno.launch_bdjuno,
-        #"faucet": faucet.launch_faucet,
+        "faucet": faucet.launch_faucet,
         #"hermes": hermes.launch_hermes
     }
 
@@ -67,7 +65,7 @@ def run(plan, args):
                 elif service == "faucet":
                     faucet_mnemonic = genesis_files[chain_name]["faucet"]["mnemonic"]
                     transfer_amount = chain["faucet"]["transfer_amount"]
-                    service_launchers[service](plan, chain_id, faucet_mnemonic, transfer_amount)
+                    service_launchers[service](plan, chain_name, chain_id, faucet_mnemonic, transfer_amount)
                 elif service == "hermes":
                     other_chain_id = parsed_args["chains"][1]["chain_id"] if len(parsed_args["chains"]) > 1 else None
                     mnemonics = genesis_files[chain_name]["mnemonics"]
@@ -76,6 +74,8 @@ def run(plan, args):
                         service_launchers[service](plan, chain_id, other_chain_id, mnemonics[0], relayer_mnemonic)
                 else:
                     service_launchers[service](plan)
+
+    plan.print(genesis_files)
     # prometheus_url = None
     # validator_mnemonic = None
     # relayer_mnemonic = None

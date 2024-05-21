@@ -52,6 +52,9 @@ def apply_chain_defaults(chain, defaults):
     # Apply defaults to additional services
     if "additional_services" not in chain:
         chain["additional_services"] = defaults["additional_services"]
+    else:
+        if "faucet" in chain["additional_services"] and chain["type"] == "gaia":
+            fail("Gaia does not support the faucet service currently.")
 
     return chain
 

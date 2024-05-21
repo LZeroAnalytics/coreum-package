@@ -20,7 +20,9 @@ def launch_network(plan, genesis_files, parsed_args):
             for _ in range(participant["count"]):
                 node_counter += 1
                 node_name = "{}-node-{}".format(chain_name, node_counter)
-                node_id, node_ip =  setup_node(plan, node_name, chain["chain_id"], participant, binary,cored_args, config_folder, genesis_file, mnemonics, faucet_data, node_counter == 1)
+                mnemonic = mnemonics[node_counter - 1]
+
+                node_id, node_ip =  setup_node(plan, node_name, chain["chain_id"], participant, binary,cored_args, config_folder, genesis_file, mnemonic, faucet_data, node_counter == 1)
                 node_info.append({"name": node_name, "node_id": node_id, "ip": node_ip})
 
         if binary == "gaiad":
@@ -29,7 +31,7 @@ def launch_network(plan, genesis_files, parsed_args):
         networks[chain_name] = node_info
     return networks
 
-def setup_node(plan, node_name, chain_id, participant, binary, cored_args, config_folder, genesis_file, mnemonics, faucet_data, is_first_node):
+def setup_node(plan, node_name, chain_id, participant, binary, cored_args, config_folder, genesis_file, mnemonic, faucet_data, is_first_node):
     # Add genesis file to the node
     files = {
         "/tmp/genesis": genesis_file,
@@ -54,7 +56,6 @@ def setup_node(plan, node_name, chain_id, participant, binary, cored_args, confi
     )
 
     # Recover the validator key
-    mnemonic = mnemonics.pop(0)
     recover_key(plan, node_name, mnemonic, binary, cored_args)
 
     # Initialize the node
