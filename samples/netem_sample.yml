@@ -1,0 +1,18 @@
+chains:
+  - name: coreum-testnet
+    type: coreum
+    participants:
+      - count: 2
+    additional_services: []
+    netem:
+      image: "ghcr.io/shopify/toxiproxy"
+      network_conditions:
+        - name: "latency-node-0-to-node-1"
+          target_service: "coreum-node-1"
+          target_port: 26657
+          toxics:
+            - type: "latency"
+              toxicity: 1.0
+              attributes:
+                latency: 1000
+                jitter: 100

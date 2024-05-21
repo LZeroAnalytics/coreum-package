@@ -10,6 +10,11 @@ DEFAULT_RELAYER_CONFIG = {
     "hermes_image": "tiljordan/hermes:latest"
 }
 
+DEFAULT_NETEM_CONFIG = {
+    "image": "shopify/toxiproxy:latest",
+    "network_conditions": []
+}
+
 def apply_chain_defaults(chain, defaults):
     # Simple key-value defaults
     chain["name"] = chain.get("name", defaults["name"])
@@ -58,6 +63,10 @@ def apply_chain_defaults(chain, defaults):
 
         if "bdjuno" in chain["additional_services"] and chain["type"] == "gaia":
             fail("Gaia does not support the bdjuno service currently.")
+
+    chain["netem"] = chain.get("netem", {})
+    for key, value in DEFAULT_NETEM_CONFIG.items():
+        chain["netem"][key] = chain["netem"].get(key, value)
 
     return chain
 
