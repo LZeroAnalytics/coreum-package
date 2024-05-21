@@ -1,6 +1,6 @@
 chains:
-  - name: coreum
+  - name: coreum-testnet
     type: coreum
-    additional_services: []
     participants:
       - count: 2
+    additional_services: []

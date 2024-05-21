@@ -29,11 +29,6 @@ chains:
       validator_pub_key_types:
         - ed25519
 
-    staking:
-      max_validators: 32
-      downtime_jail_duration: 60s
-      min_self_delegation: 20000000000
-
     modules:
       auth:
         max_memo_characters: 256
@@ -67,6 +62,10 @@ chains:
         signed_blocks_window: 34000
         slash_fraction_double_sign: 0.050000000000000000
         slash_fraction_downtime: 0.005000000000000000
+
+      staking:
+        max_validators: 32
+        min_self_delegation: 20000000000
 
       mint:
         annual_provisions: 0.000000000000000000
@@ -120,21 +119,15 @@ chains:
 
     faucet:
       faucet_amount: 100000000000000
-      transfer_amount: 100000000
 
     consensus_params:
       block_max_bytes: 22020096
-      block_max_gas: -1
+      block_max_gas: 50000000
       evidence_max_age_duration: 172800000000000
       evidence_max_age_num_blocks: 100000
       evidence_max_bytes: 1048576
       validator_pub_key_types:
         - ed25519
-
-    staking:
-      max_validators: 100
-      downtime_jail_duration: 600s
-      min_self_delegation: 20000000000
 
     modules:
       auth:
@@ -159,6 +152,11 @@ chains:
         signed_blocks_window: 100
         slash_fraction_double_sign: 0.050000000000000000
         slash_fraction_downtime: 0.010000000000000000
+
+      staking:
+        max_validators: 100
+        downtime_jail_duration: 600s
+        min_self_delegation: 20000000000
 
       mint:
         annual_provisions: 0.000000000000000000
@@ -190,7 +188,8 @@ chains:
         staking: false
 
     additional_services:
-      - faucet
+      - prometheus
+      - grafana
 
 connections:
   - chain_a: coreum

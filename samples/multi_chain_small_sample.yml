@@ -1,0 +1,8 @@
+chains:
+  - name: coreum
+    type: coreum
+  - name: gaia
+    type: gaia
+connections:
+  - chain_a: coreum
+    chain_b: gaia

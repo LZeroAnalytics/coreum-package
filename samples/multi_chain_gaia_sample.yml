@@ -1,0 +1,10 @@
+chains:
+  - name: gaia-1
+    type: gaia
+    chain_id: gaia-chain-1
+  - name: gaia-2
+    type: gaia
+    chain_id: gaia-chain-2
+connections:
+  - chain_a: gaia-1
+    chain_b: gaia-2
