@@ -104,19 +104,11 @@ def launch_hermes(plan, connection, genesis_files, parsed_args):
         )
     )
 
-    # Create the IBC channel
+    # Create the IBC channel and start Hermes relayer
     plan.exec(
         service_name="hermes-{}-{}".format(chain_a, chain_b),
         recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "hermes create channel --a-chain {} --b-chain {} --a-port transfer --b-port transfer --new-client-connection --yes".format(chain_a_id, chain_b_id)]
-        )
-    )
-
-    # Start the Hermes relayer
-    plan.exec(
-        service_name="hermes-{}-{}".format(chain_a, chain_b),
-        recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "nohup hermes start > /dev/null 2>&1 &"]
+            command=["/bin/sh", "-c", "nohup sh -c 'hermes create channel --a-chain {} --b-chain {} --a-port transfer --b-port transfer --new-client-connection --yes && hermes start' > /dev/null 2>&1 &".format(chain_a_id, chain_b_id)]
         )
     )
 
