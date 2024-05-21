@@ -87,6 +87,7 @@
     }
   ],
   "additional_services": [
-    "faucet"
+    "prometheus",
+    "grafana"
   ]
 }

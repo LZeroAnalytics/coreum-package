@@ -56,6 +56,9 @@ def apply_chain_defaults(chain, defaults):
         if "faucet" in chain["additional_services"] and chain["type"] == "gaia":
             fail("Gaia does not support the faucet service currently.")
 
+        if "bdjuno" in chain["additional_services"] and chain["type"] == "gaia":
+            fail("Gaia does not support the bdjuno service currently.")
+
     return chain
 
 def validate_input_args(input_args):
