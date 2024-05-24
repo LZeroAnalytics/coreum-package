@@ -1,0 +1,104 @@
+from locust import HttpUser, task, between, events
+import random
+import requests
+import json
+from mospy import Account, Transaction
+
+class CoreumTransactionUser(HttpUser):
+    wait_time = between({{ .Workload }}, {{ .Workload }})
+    host = "{{ .NodeURL }}"
+
+    def on_start(self):
+        self.addresses = {{ .Addresses }}
+        self.mnemonics = {{ .Mnemonics }}
+        self.node_url = "{{ .NodeURL }}"  # Node URL passed in dynamically
+        self.api_url = "{{ .APIURL }}"
+        self.chain_id = "{{ .ChainID }}"  # Chain ID passed in dynamically
+        self.denom = "{{ .Denom }}"  # Denom passed in dynamically
+        self.min_gas_fee = {{ .MinGasFee }}  # Minimum gas fee passed in dynamically
+        self.sequence_numbers = [None] * len(self.addresses)  # To store sequence numbers
+        self.prefix = "{{ .Prefix }}"
+
+    def get_account_info(self, address):
+        response = requests.get(f"{self.api_url}/cosmos/auth/v1beta1/accounts/{address}")
+        if response.status_code == 200:
+            account_info = response.json()
+            account_number = int(account_info['account']['account_number'])
+            sequence = int(account_info['account']['sequence'])
+            return account_number, sequence
+        else:
+            print(f"Failed to fetch account info for {address}: {response.content}")
+            return None, None
+
+    def create_transaction(self, recipient, amount, account, account_num, sequence):
+        tx = Transaction(
+            account=account,
+            gas=200000,
+            chain_id=self.chain_id
+        )
+        tx.set_fee(
+            amount=self.min_gas_fee,
+            denom=self.denom
+        )
+        tx.add_msg(
+            tx_type='transfer',
+            sender=account,
+            receipient=recipient,
+            amount=amount,
+            denom=self.denom
+        )
+        return tx.get_tx_bytes_as_string()
+
+    def send_transaction(self, pushable_tx):
+        pushable_tx_rpc = json.dumps({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "broadcast_tx_sync",
+            "params": {
+                "tx": pushable_tx
+            }
+        })
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(self.node_url, data=pushable_tx_rpc, headers=headers)
+        return response
+
+    @task
+    def execute_transaction(self):
+        sender_index = random.randint(0, len(self.addresses) - 1)
+        recipient_index = (sender_index + 1) % len(self.addresses)
+        amount = random.randint(1, 10)
+        sender = self.addresses[sender_index]
+        recipient = self.addresses[recipient_index]
+        mnemonic = self.mnemonics[sender_index]
+
+        # Get or update sequence number
+        if self.sequence_numbers[sender_index] is None:
+            account_number, sequence = self.get_account_info(sender)
+            self.sequence_numbers[sender_index] = sequence
+        else:
+            sequence = self.sequence_numbers[sender_index]
+            account_number = sender_index
+
+        # Initialize account
+        account = Account(seed_phrase=mnemonic, slip44=990, hrp=self.prefix, address_index=0, protobuf="cosmospy_protobuf",
+                          next_sequence=sequence, account_number=account_number)
+
+        # Create and sign the transaction
+        pushable_tx = self.create_transaction(recipient, amount, account, account_number, sequence)
+
+        # Send the transaction
+        response = self.send_transaction(pushable_tx)
+
+        if response.status_code == 200:
+            print("Transaction sent successfully!")
+            self.sequence_numbers[sender_index] += 1  # Increment the sequence number
+        else:
+            print(f"Failed to send transaction: {response.content}")
+
+@events.test_start.add_listener
+def on_test_start(environment, **kwargs):
+    print("Starting Locust test...")
+
+@events.test_stop.add_listener
+def on_test_stop(environment, **kwargs):
+    print("Stopping Locust test...")

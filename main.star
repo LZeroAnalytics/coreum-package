@@ -6,6 +6,7 @@ bdjuno = import_module("./src/bdjuno/bdjuno_launcher.star")
 faucet = import_module("./src/faucet/faucet_launcher.star")
 hermes = import_module("./src/hermes/hermes_launcher.star")
 network_launcher = import_module("./src/network_launcher/network_launcher.star")
+locust = import_module("./src/locust/locust_launcher.star")
 
 def run(plan, args):
 
@@ -20,6 +21,7 @@ def run(plan, args):
         "grafana": grafana.launch_grafana,
         "faucet": faucet.launch_faucet,
         "bdjuno": bdjuno.launch_bdjuno,
+        "locust": locust.launch_locust
     }
 
     # Launch additional services for each chain
@@ -64,6 +66,8 @@ def run(plan, args):
                     faucet_mnemonic = genesis_files[chain_name]["faucet"]["mnemonic"]
                     transfer_amount = chain["faucet"]["transfer_amount"]
                     service_launchers[service](plan, chain_name, chain_id, faucet_mnemonic, transfer_amount)
+                elif service == "locust":
+                    locust.launch_locust(plan, genesis_files[chain_name]["addresses"], genesis_files[chain_name]["mnemonics"], chain["spammer"]["tps"], chain)
                 else:
                     service_launchers[service](plan, chain_name)
 
