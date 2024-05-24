@@ -11,16 +11,16 @@ class CoreumTransactionUser(HttpUser):
     def on_start(self):
         self.addresses = {{ .Addresses }}
         self.mnemonics = {{ .Mnemonics }}
-        self.node_url = "{{ .NodeURL }}"  # Node URL passed in dynamically
-        self.api_url = "{{ .APIURL }}"
+        self.node_urls = {{ .NodeURLs }}
+        self.api_urls = {{ .APIURLs }}
         self.chain_id = "{{ .ChainID }}"  # Chain ID passed in dynamically
         self.denom = "{{ .Denom }}"  # Denom passed in dynamically
         self.min_gas_fee = {{ .MinGasFee }}  # Minimum gas fee passed in dynamically
         self.sequence_numbers = [None] * len(self.addresses)  # To store sequence numbers
         self.prefix = "{{ .Prefix }}"
 
-    def get_account_info(self, address):
-        response = requests.get(f"{self.api_url}/cosmos/auth/v1beta1/accounts/{address}")
+    def get_account_info(self, address, api_url):
+        response = requests.get(f"{api_url}/cosmos/auth/v1beta1/accounts/{address}")
         if response.status_code == 200:
             account_info = response.json()
             account_number = int(account_info['account']['account_number'])
@@ -49,7 +49,7 @@ class CoreumTransactionUser(HttpUser):
         )
         return tx.get_tx_bytes_as_string()
 
-    def send_transaction(self, pushable_tx):
+    def send_transaction(self, pushable_tx, node_url):
         pushable_tx_rpc = json.dumps({
             "jsonrpc": "2.0",
             "id": 1,
@@ -59,7 +59,7 @@ class CoreumTransactionUser(HttpUser):
             }
         })
         headers = {"Content-Type": "application/json"}
-        response = requests.post(self.node_url, data=pushable_tx_rpc, headers=headers)
+        response = requests.post(node_url, data=pushable_tx_rpc, headers=headers)
         return response
 
     @task
@@ -71,9 +71,13 @@ class CoreumTransactionUser(HttpUser):
         recipient = self.addresses[recipient_index]
         mnemonic = self.mnemonics[sender_index]
 
+        node_url_index = random.randint(0, len(self.node_urls) - 1)
+        node_url = self.node_urls[node_url_index]
+        api_url = self.api_urls[node_url_index]
+
         # Get or update sequence number
         if self.sequence_numbers[sender_index] is None:
-            account_number, sequence = self.get_account_info(sender)
+            account_number, sequence = self.get_account_info(sender, api_url)
             self.sequence_numbers[sender_index] = sequence
         else:
             sequence = self.sequence_numbers[sender_index]
@@ -87,7 +91,7 @@ class CoreumTransactionUser(HttpUser):
         pushable_tx = self.create_transaction(recipient, amount, account, account_number, sequence)
 
         # Send the transaction
-        response = self.send_transaction(pushable_tx)
+        response = self.send_transaction(pushable_tx, node_url)
 
         if response.status_code == 200:
             print("Transaction sent successfully!")

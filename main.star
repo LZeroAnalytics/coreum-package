@@ -67,7 +67,7 @@ def run(plan, args):
                     transfer_amount = chain["faucet"]["transfer_amount"]
                     service_launchers[service](plan, chain_name, chain_id, faucet_mnemonic, transfer_amount)
                 elif service == "locust":
-                    locust.launch_locust(plan, genesis_files[chain_name]["addresses"], genesis_files[chain_name]["mnemonics"], chain["spammer"]["tps"], chain)
+                    locust.launch_locust(plan, node_names, genesis_files[chain_name]["addresses"], genesis_files[chain_name]["mnemonics"], chain["spammer"]["tps"], chain)
                 else:
                     service_launchers[service](plan, chain_name)
 

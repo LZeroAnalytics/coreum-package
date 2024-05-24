@@ -1,20 +1,25 @@
-def launch_locust(plan, addresses, mnemonics, transactions_per_second, chain):
+def launch_locust(plan, node_names, addresses, mnemonics, transactions_per_second, chain):
 
     chain_name = chain["name"]
     chain_id = chain["chain_id"]
 
+    node_urls = []
+    api_urls = []
 
-    first_node = plan.get_service(
-        name = "{}-node-1".format(chain_name)
-    )
+    for node_name in node_names:
+        node_service = plan.get_service(name=node_name)
+        node_url = "http://" + node_service.ip_address + ":" + str(node_service.ports["rpc"].number)
+        api_url = "http://" + node_service.ip_address + ":" + str(node_service.ports["api"].number)
+        node_urls.append(node_url)
+        api_urls.append(api_url)
 
     workload = 0 if transactions_per_second == 0 else (1 / transactions_per_second)
 
     locust_runner_data = {
         "Addresses": json.encode(addresses),
         "Mnemonics": json.encode(mnemonics),
-        "NodeURL": "http://" + first_node.ip_address + ":" + str(first_node.ports["rpc"].number),
-        "APIURL": "http://" + first_node.ip_address + ":" + str(first_node.ports["api"].number),
+        "NodeURLs": json.encode(node_urls),
+        "APIURLs": json.encode(api_urls),
         "ChainID": chain_id,
         "Denom": chain["denom"]["name"],
         "Prefix": "cosmos" if chain["type"] == "gaia" else "devcore",
