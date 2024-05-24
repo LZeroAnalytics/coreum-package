@@ -88,13 +88,12 @@
     }
   ],
   "spammer": {
-    "tps": 0
+    "tps": 10
   },
   "additional_services": [
     "faucet",
     "prometheus",
     "grafana",
-    "bdjuno",
-    "locust"
+    "bdjuno"
   ]
 }

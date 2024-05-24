@@ -23,8 +23,9 @@ def launch_locust(plan, node_names, addresses, mnemonics, transactions_per_secon
         "ChainID": chain_id,
         "Denom": chain["denom"]["name"],
         "Prefix": "cosmos" if chain["type"] == "gaia" else "devcore",
-        "MinGasFee": chain["modules"]["feemodel"]["min_gas_price"] * 100000,
-        "Workload": workload
+        "MinGasFee": chain["modules"]["feemodel"]["min_gas_price"] * 200000,
+        "Workload": workload,
+        "Coin": 990 if chain["type"] == "coreum" else 118
     }
 
     locust_runner_file = plan.render_templates(
@@ -55,12 +56,13 @@ def launch_locust(plan, node_names, addresses, mnemonics, transactions_per_secon
         config=locust_service_config
     )
 
-    # Execute the Locust command in headless mode
-    plan.exec(
-        service_name="{}-locust-service".format(chain_name),
-        recipe=ExecRecipe(
-            command=["/bin/sh", "-c", "nohup locust -f /mnt/locust_runner.py --headless -u 1 -r 1 > locust.log 2>&1 &"]
+    if transactions_per_second != 0:
+        # Execute the Locust command in headless mode
+        plan.exec(
+            service_name="{}-locust-service".format(chain_name),
+            recipe=ExecRecipe(
+                command=["/bin/sh", "-c", "nohup locust -f /mnt/locust_runner.py --headless -u 1 -r 1 > locust.log 2>&1 &"]
+            )
         )
-    )
 
     return locust_service

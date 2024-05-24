@@ -1,0 +1,11 @@
+chains:
+  - name: coreum-testnet
+    type: gaia
+    participants:
+      - count: 2
+    spammer:
+      tps: 10
+    additional_services:
+      - locust
+      - prometheus
+      - grafana

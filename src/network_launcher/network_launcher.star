@@ -163,7 +163,7 @@ def start_nodes(plan, node_info, binary, chain_id, cored_args, workload):
         )
 
         rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090 --api.address tcp://0.0.0.0:1317 --api.enable --api.enabled-unsafe-cors "
-        start_command = "nohup {} start {} {} {} > /dev/null 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
+        start_command = "nohup {} start {} {} {} > node.log 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
         plan.exec(
             service_name=node_name,
             recipe=ExecRecipe(

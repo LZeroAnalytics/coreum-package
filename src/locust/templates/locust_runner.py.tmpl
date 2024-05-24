@@ -3,6 +3,14 @@ import random
 import requests
 import json
 from mospy import Account, Transaction
+import threading
+
+# Shared state for sequence numbers and locks
+shared_state = {
+    "sequence_numbers": {},
+    "account_numbers": {},
+    "locks": {}
+}
 
 class CoreumTransactionUser(HttpUser):
     wait_time = between({{ .Workload }}, {{ .Workload }})
@@ -16,8 +24,15 @@ class CoreumTransactionUser(HttpUser):
         self.chain_id = "{{ .ChainID }}"  # Chain ID passed in dynamically
         self.denom = "{{ .Denom }}"  # Denom passed in dynamically
         self.min_gas_fee = {{ .MinGasFee }}  # Minimum gas fee passed in dynamically
-        self.sequence_numbers = [None] * len(self.addresses)  # To store sequence numbers
         self.prefix = "{{ .Prefix }}"
+        self.coin = {{ .Coin }}
+
+        # Initialize shared state for each address
+        for address in self.addresses:
+            if address not in shared_state["sequence_numbers"]:
+                shared_state["sequence_numbers"][address] = None
+                shared_state["account_numbers"][address] = None
+                shared_state["locks"][address] = threading.Lock()
 
     def get_account_info(self, address, api_url):
         response = requests.get(f"{api_url}/cosmos/auth/v1beta1/accounts/{address}")
@@ -49,17 +64,15 @@ class CoreumTransactionUser(HttpUser):
         )
         return tx.get_tx_bytes_as_string()
 
-    def send_transaction(self, pushable_tx, node_url):
-        pushable_tx_rpc = json.dumps({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "broadcast_tx_sync",
-            "params": {
-                "tx": pushable_tx
+    def send_transaction(self, tx_bytes, api_url):
+        pushable_tx = json.dumps(
+            {
+                "tx_bytes": tx_bytes,
+                "mode": "BROADCAST_MODE_SYNC"  # Available modes: BROADCAST_MODE_SYNC, BROADCAST_MODE_ASYNC, BROADCAST_MODE_BLOCK
             }
-        })
+        )
         headers = {"Content-Type": "application/json"}
-        response = requests.post(node_url, data=pushable_tx_rpc, headers=headers)
+        response = requests.post(api_url + "/cosmos/tx/v1beta1/txs", data=pushable_tx, headers=headers)
         return response
 
     @task
@@ -76,28 +89,30 @@ class CoreumTransactionUser(HttpUser):
         api_url = self.api_urls[node_url_index]
 
         # Get or update sequence number
-        if self.sequence_numbers[sender_index] is None:
-            account_number, sequence = self.get_account_info(sender, api_url)
-            self.sequence_numbers[sender_index] = sequence
-        else:
-            sequence = self.sequence_numbers[sender_index]
-            account_number = sender_index
+        with shared_state["locks"][sender]:
+            if shared_state["sequence_numbers"][sender] is None or shared_state["account_numbers"][sender] is None:
+                account_number, sequence = self.get_account_info(sender, api_url)
+                shared_state["sequence_numbers"][sender] = sequence
+                shared_state["account_numbers"][sender] = account_number
+            else:
+                sequence = shared_state["sequence_numbers"][sender]
+                account_number = shared_state["account_numbers"][sender]
 
-        # Initialize account
-        account = Account(seed_phrase=mnemonic, slip44=990, hrp=self.prefix, address_index=0, protobuf="cosmospy_protobuf",
-                          next_sequence=sequence, account_number=account_number)
+            # Initialize account
+            account = Account(seed_phrase=mnemonic, slip44=self.coin, hrp=self.prefix, address_index=0, protobuf="cosmospy_protobuf",
+                              next_sequence=sequence, account_number=account_number)
 
-        # Create and sign the transaction
-        pushable_tx = self.create_transaction(recipient, amount, account, account_number, sequence)
+            # Create and sign the transaction
+            tx_bytes = self.create_transaction(recipient, amount, account, account_number, sequence)
 
-        # Send the transaction
-        response = self.send_transaction(pushable_tx, node_url)
+            # Send the transaction
+            response = self.send_transaction(tx_bytes, api_url)
 
-        if response.status_code == 200:
-            print("Transaction sent successfully!")
-            self.sequence_numbers[sender_index] += 1  # Increment the sequence number
-        else:
-            print(f"Failed to send transaction: {response.content}")
+            if response.status_code == 200:
+                print(f"Transaction sent: {response.text}")
+                shared_state["sequence_numbers"][sender] += 1  # Increment the sequence number
+            else:
+                print(f"Failed to send transaction: {response.content}")
 
 @events.test_start.add_listener
 def on_test_start(environment, **kwargs):
