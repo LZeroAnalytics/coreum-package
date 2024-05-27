@@ -24,7 +24,7 @@ Specifically, this [package][package-reference] will:
    kurtosis run --enclave my-testnet github.com/LZeroAnalytics/coreum-package
    ```
 
-This command will spin up one coreum node, launch prometheus and grafana instances, and set up a faucet service.
+This command will spin up one coreum node, launch prometheus and grafana instances, launch a block explorer, and set up a faucet service.
 #### Run with your own configuration
 
 Kurtosis packages are parameterizable, meaning you can customize your network and its behavior to suit your needs by storing parameters in a file that you can pass in at runtime like so:
@@ -317,7 +317,7 @@ chains:
         
      # Additional services to be deployed with the chain
      # For Coreum, all services except transaction spammer are launched by default
-     # For Gaia, grafan and prometheus are launched by default
+     # For Gaia, grafana and prometheus are launched by default
      # Gaia only support prometheus, grafana, and transaction spammer currently
      additional_services:
         - faucet
