@@ -11,7 +11,8 @@ Specifically, this [package][package-reference] will:
 3. Spin up a Grafana and Prometheus instances to observe the network
 4. Launch a [faucet](https://github.com/CoreumFoundation/faucet) service to create funded accounts or fund existing accounts
 5. Spin up a [Big Dipper](https://github.com/CoreumFoundation/big-dipper-2.0-cosmos) block explorer instance
-6. Launch a [hermes](https://hermes.informal.systems/) IBC relayer to connect testnets
+6. Launch a transaction spammer if configured   
+7. Launch a [hermes](https://hermes.informal.systems/) IBC relayer to connect testnets
 ## Quickstart
 
 
@@ -54,11 +55,22 @@ And if you need the logs for a service, simply run:
 kurtosis service logs my-testnet $SERVICE_NAME
 ```
 
+To access logs of any blockchain nodes or the transaction spammer, please instead use the previous command to gain 
+shell access and inspect the log files `node.log` and `locust.log` for the nodes and the transaction spammer respectively.  
+
 To stop a network run:
 
 ```bash
 kurtosis enclave stop $THE_NETWORK_NAME
 ```
+
+Before running a new network with the same network name, you should remove all associated resources:
+
+```bash
+kurtosis enclave rm $THE_NETWORK_NAME
+```
+
+You can also pass the ``-f`` flag to stop a network and remove resources in one command.
 
 An easy way to clean all unused resources and shut down all networks:
 
@@ -296,14 +308,23 @@ chains:
 
            # Whether the participant is a staking validator
           staking: true
-
+     
+     # Configure the transactions per second (tps) sent
+     # Only launched when spammer is included in additional_services
+     # Default: 10
+     spammer:
+        tps: 10
+        
      # Additional services to be deployed with the chain
-     # Gaia only support prometheus and grafana currently 
+     # For Coreum, all services except transaction spammer are launched by default
+     # For Gaia, grafan and prometheus are launched by default
+     # Gaia only support prometheus, grafana, and transaction spammer currently
      additional_services:
         - faucet
         - bdjuno
         - prometheus
         - grafana
+        - spammer
 
 # Connections between different chains
 # Each connection requires at least the two chain names as specified above

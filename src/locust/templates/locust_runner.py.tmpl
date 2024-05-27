@@ -1,0 +1,123 @@
+from locust import HttpUser, task, between, events
+import random
+import requests
+import json
+from mospy import Account, Transaction
+import threading
+
+# Shared state for sequence numbers and locks
+shared_state = {
+    "sequence_numbers": {},
+    "account_numbers": {},
+    "locks": {}
+}
+
+class CoreumTransactionUser(HttpUser):
+    wait_time = between({{ .Workload }}, {{ .Workload }})
+    host = "{{ .NodeURL }}"
+
+    def on_start(self):
+        self.addresses = {{ .Addresses }}
+        self.mnemonics = {{ .Mnemonics }}
+        self.node_urls = {{ .NodeURLs }}
+        self.api_urls = {{ .APIURLs }}
+        self.chain_id = "{{ .ChainID }}"  # Chain ID passed in dynamically
+        self.denom = "{{ .Denom }}"  # Denom passed in dynamically
+        self.min_gas_fee = {{ .MinGasFee }}  # Minimum gas fee passed in dynamically
+        self.prefix = "{{ .Prefix }}"
+        self.coin = {{ .Coin }}
+
+        # Initialize shared state for each address
+        for address in self.addresses:
+            if address not in shared_state["sequence_numbers"]:
+                shared_state["sequence_numbers"][address] = None
+                shared_state["account_numbers"][address] = None
+                shared_state["locks"][address] = threading.Lock()
+
+    def get_account_info(self, address, api_url):
+        response = requests.get(f"{api_url}/cosmos/auth/v1beta1/accounts/{address}")
+        if response.status_code == 200:
+            account_info = response.json()
+            account_number = int(account_info['account']['account_number'])
+            sequence = int(account_info['account']['sequence'])
+            return account_number, sequence
+        else:
+            print(f"Failed to fetch account info for {address}: {response.content}")
+            return None, None
+
+    def create_transaction(self, recipient, amount, account, account_num, sequence):
+        tx = Transaction(
+            account=account,
+            gas=200000,
+            chain_id=self.chain_id
+        )
+        tx.set_fee(
+            amount=self.min_gas_fee,
+            denom=self.denom
+        )
+        tx.add_msg(
+            tx_type='transfer',
+            sender=account,
+            receipient=recipient,
+            amount=amount,
+            denom=self.denom
+        )
+        return tx.get_tx_bytes_as_string()
+
+    def send_transaction(self, tx_bytes, api_url):
+        pushable_tx = json.dumps(
+            {
+                "tx_bytes": tx_bytes,
+                "mode": "BROADCAST_MODE_SYNC"  # Available modes: BROADCAST_MODE_SYNC, BROADCAST_MODE_ASYNC, BROADCAST_MODE_BLOCK
+            }
+        )
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(api_url + "/cosmos/tx/v1beta1/txs", data=pushable_tx, headers=headers)
+        return response
+
+    @task
+    def execute_transaction(self):
+        sender_index = random.randint(0, len(self.addresses) - 1)
+        recipient_index = (sender_index + 1) % len(self.addresses)
+        amount = random.randint(1, 10)
+        sender = self.addresses[sender_index]
+        recipient = self.addresses[recipient_index]
+        mnemonic = self.mnemonics[sender_index]
+
+        node_url_index = random.randint(0, len(self.node_urls) - 1)
+        node_url = self.node_urls[node_url_index]
+        api_url = self.api_urls[node_url_index]
+
+        # Get or update sequence number
+        with shared_state["locks"][sender]:
+            if shared_state["sequence_numbers"][sender] is None or shared_state["account_numbers"][sender] is None:
+                account_number, sequence = self.get_account_info(sender, api_url)
+                shared_state["sequence_numbers"][sender] = sequence
+                shared_state["account_numbers"][sender] = account_number
+            else:
+                sequence = shared_state["sequence_numbers"][sender]
+                account_number = shared_state["account_numbers"][sender]
+
+            # Initialize account
+            account = Account(seed_phrase=mnemonic, slip44=self.coin, hrp=self.prefix, address_index=0, protobuf="cosmospy_protobuf",
+                              next_sequence=sequence, account_number=account_number)
+
+            # Create and sign the transaction
+            tx_bytes = self.create_transaction(recipient, amount, account, account_number, sequence)
+
+            # Send the transaction
+            response = self.send_transaction(tx_bytes, api_url)
+
+            if response.status_code == 200:
+                print(f"Transaction sent: {response.text}")
+                shared_state["sequence_numbers"][sender] += 1  # Increment the sequence number
+            else:
+                print(f"Failed to send transaction: {response.content}")
+
+@events.test_start.add_listener
+def on_test_start(environment, **kwargs):
+    print("Starting Locust test...")
+
+@events.test_stop.add_listener
+def on_test_stop(environment, **kwargs):
+    print("Stopping Locust test...")

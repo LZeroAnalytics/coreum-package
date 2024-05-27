@@ -27,7 +27,7 @@ def launch_network(plan, genesis_files, parsed_args):
 
         if binary == "gaiad":
             cored_args = "--minimum-gas-prices {}{}".format(chain["modules"]["feemodel"]["min_gas_price"], chain["denom"]["name"])
-        start_nodes(plan, node_info, binary, cored_args)
+        start_nodes(plan, node_info, binary, chain["chain_id"], cored_args, chain["spammer"]["tps"])
         networks[chain_name] = node_info
     return networks
 
@@ -136,11 +136,14 @@ def setup_prometheus(plan, node_name, binary, chain_id):
         )
     )
 
-def start_nodes(plan, node_info, binary, cored_args):
+def start_nodes(plan, node_info, binary, chain_id, cored_args, workload):
     first_node = node_info[0]
     first_node_id = first_node["node_id"]
     first_node_ip = first_node["ip"]
     seed_address = "{}@{}:26656".format(first_node_id, first_node_ip)
+
+    config_path = "/root/.core/{}/config/config.toml".format(chain_id) if binary == "cored" else "/root/.gaia/config/config.toml"
+    max_subscriptions = workload + len(node_info)
 
     for node in node_info:
         node_name = node["name"]
@@ -149,8 +152,18 @@ def start_nodes(plan, node_info, binary, cored_args):
         else:
             seed_options = "--p2p.seeds {}".format(seed_address)
 
-        rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090"
-        start_command = "nohup {} start {} {} {} > /dev/null 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
+        # Command to replace the values in config.toml
+        update_connections_command = "sed -i 's/max_open_connections = .*/max_open_connections = 0/' {0} && sed -i 's/max_subscriptions_per_client = .*/max_subscriptions_per_client = {1}/' {0} && sed -i 's/timeout_broadcast_tx_commit = .*/timeout_broadcast_tx_commit = \"60s\"/' {0}".format(config_path, max_subscriptions)
+
+        plan.exec(
+            service_name=node_name,
+            recipe=ExecRecipe(
+                command=["/bin/sh", "-c", update_connections_command]
+            )
+        )
+
+        rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090 --api.address tcp://0.0.0.0:1317 --api.enable --api.enabled-unsafe-cors "
+        start_command = "nohup {} start {} {} {} > node.log 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
         plan.exec(
             service_name=node_name,
             recipe=ExecRecipe(

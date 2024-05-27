@@ -87,10 +87,13 @@
       "staking": true
     }
   ],
+  "spammer": {
+    "tps": 10
+  },
   "additional_services": [
     "faucet",
-    "bdjuno",
     "prometheus",
-    "grafana"
+    "grafana",
+    "bdjuno"
   ]
 }
