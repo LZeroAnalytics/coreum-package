@@ -1,6 +1,6 @@
 chains:
   - name: coreum-testnet
-    type: gaia
+    type: coreum
     participants:
       - count: 2
     spammer:

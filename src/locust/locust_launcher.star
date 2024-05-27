@@ -6,12 +6,12 @@ def launch_locust(plan, node_names, addresses, mnemonics, transactions_per_secon
     node_urls = []
     api_urls = []
 
-    for node_name in node_names:
-        node_service = plan.get_service(name=node_name)
-        node_url = "http://" + node_service.ip_address + ":" + str(node_service.ports["rpc"].number)
-        api_url = "http://" + node_service.ip_address + ":" + str(node_service.ports["api"].number)
-        node_urls.append(node_url)
-        api_urls.append(api_url)
+    node_name = node_names[0]
+    node_service = plan.get_service(name=node_name)
+    node_url = "http://" + node_service.ip_address + ":" + str(node_service.ports["rpc"].number)
+    api_url = "http://" + node_service.ip_address + ":" + str(node_service.ports["api"].number)
+    node_urls.append(node_url)
+    api_urls.append(api_url)
 
     workload = 0 if transactions_per_second == 0 else (1 / transactions_per_second)
 
