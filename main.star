@@ -21,7 +21,7 @@ def run(plan, args):
         "grafana": grafana.launch_grafana,
         "faucet": faucet.launch_faucet,
         "bdjuno": bdjuno.launch_bdjuno,
-        "locust": locust.launch_locust
+        "spammer": locust.launch_locust
     }
 
     # Launch additional services for each chain
@@ -66,7 +66,7 @@ def run(plan, args):
                     faucet_mnemonic = genesis_files[chain_name]["faucet"]["mnemonic"]
                     transfer_amount = chain["faucet"]["transfer_amount"]
                     service_launchers[service](plan, chain_name, chain_id, faucet_mnemonic, transfer_amount)
-                elif service == "locust":
+                elif service == "spammer":
                     locust.launch_locust(plan, node_names, genesis_files[chain_name]["addresses"], genesis_files[chain_name]["mnemonics"], chain["spammer"]["tps"], chain)
                 else:
                     service_launchers[service](plan, chain_name)
