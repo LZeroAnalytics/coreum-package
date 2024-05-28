@@ -11,8 +11,9 @@ Specifically, this [package][package-reference] will:
 3. Spin up a Grafana and Prometheus instances to observe the network
 4. Launch a [faucet](https://github.com/CoreumFoundation/faucet) service to create funded accounts or fund existing accounts
 5. Spin up a [Big Dipper](https://github.com/CoreumFoundation/big-dipper-2.0-cosmos) block explorer instance
-6. Launch a transaction spammer if configured   
-7. Launch a [hermes](https://hermes.informal.systems/) IBC relayer to connect testnets
+6. Launch a transaction spammer if configured
+7. Possibility to inject latencies between nodes to create more realistic networks   
+8. Launch a [hermes](https://hermes.informal.systems/) IBC relayer to connect testnets
 ## Quickstart
 
 
@@ -308,6 +309,12 @@ chains:
 
            # Whether the participant is a staking validator
           staking: true
+
+          # Latency in ms between this node and other nodes
+          latency: 0
+          
+          # Jitter represents the variance in latency in ms
+          jitter: 0
      
      # Configure the transactions per second (tps) sent
      # Only launched when spammer is included in additional_services
