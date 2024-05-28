@@ -441,7 +441,7 @@ chains:
 
 connections:
 - chain_a: coreum-testnet
-chain_b: coreum-devnet
+  chain_b: coreum-devnet
 ```
 </details>
 
