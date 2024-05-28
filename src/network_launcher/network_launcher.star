@@ -181,8 +181,8 @@ def start_seed_node(plan, node_info, binary, chain_id, cored_args, workload):
     )
 
     seed_options = "--p2p.seeds ''"
-    rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090"
-    start_command = "nohup {} start {} {} {} > /dev/null 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
+    rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090 --api.address tcp://0.0.0.0:1317 --api.enable --api.enabled-unsafe-cors"
+    start_command = "nohup {} start {} {} {} > node.log 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
     plan.exec(
         service_name=node_name,
         recipe=ExecRecipe(
@@ -206,7 +206,7 @@ def start_nodes(plan, chain_name, node_info, binary, chain_id, cored_args, workl
     for node in node_info:
         node_name = node["name"]
         if node_name != first_node["name"]:
-            proxy_port = (8475 + (int(node_name.split('-')[-1]) - 1)) if netem_enabled else 26657
+            proxy_port = (8475 + (int(node_name.split('-')[-1]) - 1)) if netem_enabled else 26656
             seed_address = "{}@{}:{}".format(first_node_id, peer_ip, proxy_port)
             seed_options = "--p2p.seeds {}".format(seed_address)
 
@@ -220,8 +220,8 @@ def start_nodes(plan, chain_name, node_info, binary, chain_id, cored_args, workl
                 )
             )
 
-            rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090"
-            start_command = "nohup {} start {} {} {} > /dev/null 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
+            rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090 --api.address tcp://0.0.0.0:1317 --api.enable --api.enabled-unsafe-cors"
+            start_command = "nohup {} start {} {} {} > node.log 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
             plan.exec(
                 service_name=node_name,
                 recipe=ExecRecipe(
