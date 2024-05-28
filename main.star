@@ -71,6 +71,7 @@ def run(plan, args):
                 else:
                     service_launchers[service](plan, chain_name)
 
+
     for connection in parsed_args["connections"]:
         hermes.launch_hermes(plan, connection, genesis_files, parsed_args)
 

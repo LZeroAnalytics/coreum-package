@@ -83,7 +83,9 @@
       "account_balance": 100000000000,
       "staking_amount": 20000000000,
       "count": 1,
-      "staking": true
+      "staking": true,
+      "latency": 0,
+      "jitter": 0
     }
   ],
   "spammer": {
