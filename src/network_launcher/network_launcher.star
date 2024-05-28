@@ -1,3 +1,5 @@
+netem = import_module("../netem/netem_launcher.star")
+
 def launch_network(plan, genesis_files, parsed_args):
     networks = {}
     for chain in parsed_args["chains"]:
@@ -16,6 +18,7 @@ def launch_network(plan, genesis_files, parsed_args):
         # Launch nodes for each participant
         node_counter = 0
         node_info = []
+        network_conditions = []
         for participant in chain["participants"]:
             for _ in range(participant["count"]):
                 node_counter += 1
@@ -25,9 +28,26 @@ def launch_network(plan, genesis_files, parsed_args):
                 node_id, node_ip =  setup_node(plan, node_name, chain["chain_id"], participant, binary,cored_args, config_folder, genesis_file, mnemonic, faucet_data, node_counter == 1)
                 node_info.append({"name": node_name, "node_id": node_id, "ip": node_ip})
 
+                # Add network condition for this node
+                network_conditions.append({
+                    "node_name": node_name,
+                    "target_ip": node_ip,
+                    "target_port": 26656,
+                    "latency": participant.get("latency", 0),
+                    "jitter": participant.get("jitter", 0)
+                })
+
+
         if binary == "gaiad":
             cored_args = "--minimum-gas-prices {}{}".format(chain["modules"]["feemodel"]["min_gas_price"], chain["denom"]["name"])
-        start_nodes(plan, node_info, binary, cored_args)
+
+        start_seed_node(plan, node_info, binary, cored_args)
+
+        # Launch toxiproxy and configure network conditions
+        netem.launch_netem(plan, chain_name, network_conditions)
+
+        start_nodes(plan, chain_name, node_info, binary, cored_args)
+
         networks[chain_name] = node_info
     return networks
 
@@ -136,25 +156,39 @@ def setup_prometheus(plan, node_name, binary, chain_id):
         )
     )
 
-def start_nodes(plan, node_info, binary, cored_args):
+def start_seed_node(plan, node_info, binary, cored_args):
+    node = node_info[0]
+    node_name = node["name"]
+    seed_options = "--p2p.seeds ''"
+
+    rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090"
+    start_command = "nohup {} start {} {} {} > /dev/null 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
+    plan.exec(
+        service_name=node_name,
+        recipe=ExecRecipe(
+            command=["/bin/sh", "-c", start_command]
+        )
+    )
+    plan.print("{} started successfully".format(node_name))
+
+def start_nodes(plan, chain_name, node_info, binary, cored_args):
     first_node = node_info[0]
     first_node_id = first_node["node_id"]
-    first_node_ip = first_node["ip"]
-    seed_address = "{}@{}:26656".format(first_node_id, first_node_ip)
+    netem_ip = plan.get_service(name="{}-netem".format(chain_name)).ip_address
 
     for node in node_info:
         node_name = node["name"]
-        if node_name == first_node["name"]:
-            seed_options = "--p2p.seeds ''"
-        else:
+        if node_name != first_node["name"]:
+            proxy_port = 8475 + (int(node_name.split('-')[-1]) - 1)
+            seed_address = "{}@{}:{}".format(first_node_id, netem_ip, proxy_port)
             seed_options = "--p2p.seeds {}".format(seed_address)
 
-        rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090"
-        start_command = "nohup {} start {} {} {} > /dev/null 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
-        plan.exec(
-            service_name=node_name,
-            recipe=ExecRecipe(
-                command=["/bin/sh", "-c", start_command]
+            rpc_options = "--rpc.laddr tcp://0.0.0.0:26657 --grpc.address 0.0.0.0:9090"
+            start_command = "nohup {} start {} {} {} > node.log 2>&1 &".format(binary, rpc_options, seed_options, cored_args)
+            plan.exec(
+                service_name=node_name,
+                recipe=ExecRecipe(
+                    command=["/bin/sh", "-c", start_command]
+                )
             )
-        )
-        plan.print("{} started successfully".format(node_name))
+            plan.print("{} started successfully".format(node_name))

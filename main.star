@@ -6,7 +6,6 @@ bdjuno = import_module("./src/bdjuno/bdjuno_launcher.star")
 faucet = import_module("./src/faucet/faucet_launcher.star")
 hermes = import_module("./src/hermes/hermes_launcher.star")
 network_launcher = import_module("./src/network_launcher/network_launcher.star")
-netem = import_module("./src/netem/netem_launcher.star")
 
 def run(plan, args):
 
@@ -68,8 +67,6 @@ def run(plan, args):
                 else:
                     service_launchers[service](plan, chain_name)
 
-        if "netem" in chain:
-            netem.launch_netem(plan, chain_name, chain["netem"])
 
     for connection in parsed_args["connections"]:
         hermes.launch_hermes(plan, connection, genesis_files, parsed_args)
