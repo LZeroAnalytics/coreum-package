@@ -112,7 +112,8 @@ chains:
       # Allows values: coreum or gaia
      type: coreum
 
-      # Chain ID has to be coreum-devnet-1 for coreum
+      # Chain ID can  be coreum-devnet-1 (default), coreum-testnet-1, or coreum-mainnet-1
+      # If coreum-testnet-1 or coreum-mainnet-1 is used, denom needs to be adapted
       # Can be any id for gaia and should be set when creating more than 1 gaia chain
      chain_id: coreum-devnet-1
 
@@ -404,6 +405,43 @@ chains:
 connections:
    - chain_a: gaia-1
      chain_b: gaia-2
+```
+</details>
+
+<details>
+<summary>Two Coreum chains connected using IBC</summary>
+
+It is currently not possible to connect two coreum devnets but the configuration below shows
+how to connect a coreum testnet with a coreum devnet. 
+```yaml
+chains:
+  - name: coreum-testnet
+    type: coreum
+    chain_id: coreum-testnet-1
+    denom:
+      name: utestcore
+      display: testcore
+      symbol: utestcore
+      description: utestcore coin
+      units:
+        - denom: utestcore
+          exponent: 0
+        - denom: testcore
+          exponent: 6
+    additional_services:
+      - prometheus
+      - grafana
+
+- name: coreum-devnet
+  type: coreum
+  chain_id: coreum-devnet-1
+  additional_services:
+   - prometheus
+   - grafana
+
+connections:
+- chain_a: coreum-testnet
+chain_b: coreum-devnet
 ```
 </details>
 

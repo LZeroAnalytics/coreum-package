@@ -1,4 +1,4 @@
-def launch_bdjuno(plan, chain_name):
+def launch_bdjuno(plan, chain_name, denom):
     postgres_service = launch_postgres_service(plan, chain_name)
 
     # Get first node
@@ -7,7 +7,7 @@ def launch_bdjuno(plan, chain_name):
     )
 
     # Launch the bdjuno service
-    launch_bdjuno_service(plan, postgres_service, first_node, chain_name)
+    launch_bdjuno_service(plan, postgres_service, first_node, chain_name, denom)
 
     # Launch hasura service
     harusa_service = launch_hasura_service(plan, postgres_service, chain_name)
@@ -63,10 +63,10 @@ def launch_postgres_service(plan, chain_name):
     return postgres_service
 
 
-def launch_bdjuno_service(plan, postgres_service, node_service, chain_name):
+def launch_bdjuno_service(plan, postgres_service, node_service, chain_name, denom):
     # Render the configuration file
     bdjuno_config_data = {
-        "ChainPrefix": "devcore",
+        "ChainPrefix": denom["display"],
         "NodeIP": node_service.ip_address,
         "PostgresIP": postgres_service.ip_address,
         "PostgresPort": postgres_service.ports["db"].number,

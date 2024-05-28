@@ -29,7 +29,7 @@ def launch_hermes(plan, connection, genesis_files, parsed_args):
         "SourceChainID": chain_a_id,
         "SourceRPCURL": chain_a_rpc_url,
         "SourceGRPCURL": chain_a_grpc_url,
-        "SourceAccountPrefix": "cosmos" if chain_a_config["type"] == "gaia" else "devcore",
+        "SourceAccountPrefix": "cosmos" if chain_a_config["type"] == "gaia" else chain_a_config["denom"]["display"],
         "SourceMaxGas": chain_a_config["consensus_params"]["block_max_gas"],
         "SourceGasPrice": {
             "Amount": chain_a_config["modules"]["feemodel"]["min_gas_price"],
@@ -38,7 +38,7 @@ def launch_hermes(plan, connection, genesis_files, parsed_args):
         "PeerChainID": chain_b_id,
         "PeerRPCURL": chain_b_rpc_url,
         "PeerGRPCURL": chain_b_grpc_url,
-        "PeerAccountPrefix": "cosmos" if chain_b_config["type"] == "gaia" else "devcore",
+        "PeerAccountPrefix": "cosmos" if chain_b_config["type"] == "gaia" else chain_b_config["denom"]["display"],
         "PeerMaxGas": chain_b_config["consensus_params"]["block_max_gas"],
         "PeerGasPrice": {
             "Amount": chain_b_config["modules"]["feemodel"]["min_gas_price"],

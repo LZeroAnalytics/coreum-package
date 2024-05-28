@@ -1,0 +1,28 @@
+chains:
+  - name: coreum-testnet
+    type: coreum
+    chain_id: coreum-testnet-1
+    denom:
+      name: utestcore
+      display: testcore
+      symbol: utestcore
+      description: utestcore coin
+      units:
+        - denom: utestcore
+          exponent: 0
+        - denom: testcore
+          exponent: 6
+    additional_services:
+      - prometheus
+      - grafana
+
+  - name: coreum-devnet
+    type: coreum
+    chain_id: coreum-devnet-1
+    additional_services:
+      - prometheus
+      - grafana
+
+connections:
+    - chain_a: coreum-testnet
+      chain_b: coreum-devnet
