@@ -35,7 +35,7 @@ def launch_grafana(plan, prometheus_url, chain_name):
     grafana_service_config = ServiceConfig(
         image=IMAGE_NAME,
         ports={
-            "http_port_id": PortSpec(number = 3000, transport_protocol = "TCP", application_protocol = "http", wait = None)
+            "http-port-id": PortSpec(number = 3000, transport_protocol = "TCP", application_protocol = "http", wait = None)
         },
         env_vars={
             "GF_AUTH_ANONYMOUS_ENABLED": "true",
