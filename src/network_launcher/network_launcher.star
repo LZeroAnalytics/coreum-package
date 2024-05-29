@@ -74,9 +74,9 @@ def setup_node(plan, node_name, chain_id, participant, binary, cored_args, confi
                 "p2p": PortSpec(number=26656, transport_protocol="TCP", wait=None),
                 "rpc": PortSpec(number=26657, transport_protocol="TCP", wait=None),
                 "grpc": PortSpec(number=9090, transport_protocol="TCP", wait=None),
-                "grpcWeb": PortSpec(number=9091, transport_protocol="TCP", wait=None),
+                "grpc-web": PortSpec(number=9091, transport_protocol="TCP", wait=None),
                 "api": PortSpec(number=1317, transport_protocol="TCP", wait=None),
-                "pProf": PortSpec(number=6060, transport_protocol="TCP", wait=None),
+                "p-prof": PortSpec(number=6060, transport_protocol="TCP", wait=None),
                 "prometheus": PortSpec(number=26660, transport_protocol="TCP", wait=None)
             }
         )
