@@ -2,9 +2,9 @@ IMAGE_NAME = "grafana/grafana:latest"
 
 GRAFANA_DASHBOARDS_DIRPATH_ON_SERVICE = "/var/lib/grafana/dashboards"
 
-MIN_CPU = 100  # Minimum CPU for Grafana
+MIN_CPU = 0  # Minimum CPU for Grafana
 MAX_CPU = 500  # Maximum CPU for Grafana
-MIN_MEMORY = 256  # Minimum memory for Grafana in MB
+MIN_MEMORY = 0  # Minimum memory for Grafana in MB
 MAX_MEMORY = 1024  # Maximum memory for Grafana in MB
 
 def launch_grafana(plan, prometheus_url, chain_name):
