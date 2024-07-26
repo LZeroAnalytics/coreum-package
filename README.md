@@ -293,7 +293,12 @@ chains:
 
            # Maximum expected time per block
            max_expected_time_per_block: 30000000000
-
+    
+    # Configure the url from which grafana is served
+    # Only relevant for cloud hosted environments
+    grafana:
+       server_url: ""
+       
      # Array of node templates (participants)
      participants:
         # Image used for these nodes

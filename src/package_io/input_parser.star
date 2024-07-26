@@ -23,6 +23,7 @@ def apply_chain_defaults(chain, defaults):
     chain["genesis_delay"] = chain.get("genesis_delay", defaults["genesis_delay"])
     chain["initial_height"] = chain.get("initial_height", defaults["initial_height"])
     chain["spammer"] = chain.get("spammer", defaults["spammer"])
+    chain["grafana"] = chain.get("grafana", defaults["grafana"])
 
     # Nested defaults
     chain["denom"] = chain.get("denom", {})

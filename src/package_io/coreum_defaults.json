@@ -78,6 +78,9 @@
       "max_expected_time_per_block": 30000000000
     }
   },
+  "grafana": {
+    "server_url": ""
+  },
   "participants": [
     {
       "image": "tiljordan/coreum-cored:latest",

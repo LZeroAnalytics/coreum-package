@@ -7,7 +7,7 @@ MAX_CPU = 500  # Maximum CPU for Grafana
 MIN_MEMORY = 0  # Minimum memory for Grafana in MB
 MAX_MEMORY = 1024  # Maximum memory for Grafana in MB
 
-def launch_grafana(plan, prometheus_url, chain_name):
+def launch_grafana(plan, prometheus_url, chain_name, server_url):
     # Create Grafana configuration and dashboard provisioning artifacts
 
     grafana_datasource = plan.render_templates(
@@ -39,7 +39,8 @@ def launch_grafana(plan, prometheus_url, chain_name):
         },
         env_vars={
             "GF_AUTH_ANONYMOUS_ENABLED": "true",
-            "GF_AUTH_ANONYMOUS_ORG_ROLE": "Admin"
+            "GF_AUTH_ANONYMOUS_ORG_ROLE": "Admin",
+            "GF_SERVER_ROOT_URL": server_url,
         },
         files={
             "/etc/grafana/provisioning/datasources": grafana_datasource,

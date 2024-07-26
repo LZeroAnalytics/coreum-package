@@ -61,7 +61,7 @@ def run(plan, args):
                 if service == "prometheus":
                     prometheus_url = service_launchers[service](plan, node_names, chain_name)
                 elif service == "grafana":
-                    service_launchers[service](plan, prometheus_url, chain_name)
+                    service_launchers[service](plan, prometheus_url, chain_name, chain["grafana"]["server_url"])
                 elif service == "faucet":
                     faucet_mnemonic = genesis_files[chain_name]["faucet"]["mnemonic"]
                     transfer_amount = chain["faucet"]["transfer_amount"]
