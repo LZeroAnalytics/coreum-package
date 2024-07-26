@@ -90,6 +90,12 @@ chains:
       server_url: ""
       base_path: ""
 
+    block_explorer:
+      harusa_url: ""
+      harusa_ws: ""
+      node_rpc_url: ""
+      image: "tiljordan/big-dipper-ui:latest"
+
     participants:
       - image: tiljordan/coreum-cored:latest
         account_balance: 100000000000

@@ -69,7 +69,7 @@ def run(plan, args):
                 elif service == "spammer":
                     locust.launch_locust(plan, node_names, genesis_files[chain_name]["addresses"], genesis_files[chain_name]["mnemonics"], chain["spammer"]["tps"], chain)
                 elif service == "bdjuno":
-                    service_launchers[service](plan, chain_name, chain["denom"])
+                    service_launchers[service](plan, chain_name, chain["denom"], chain["block_explorer"])
 
 
     for connection in parsed_args["connections"]:

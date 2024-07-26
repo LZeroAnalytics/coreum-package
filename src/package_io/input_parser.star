@@ -25,6 +25,7 @@ def apply_chain_defaults(chain, defaults):
     chain["spammer"] = chain.get("spammer", defaults["spammer"])
     chain["grafana"] = chain.get("grafana", defaults["grafana"])
     chain["prometheus"] = chain.get("prometheus", defaults["prometheus"])
+    chain["block_explorer"] = chain.get("block_explorer", defaults["block_explorer"])
 
     # Nested defaults
     chain["denom"] = chain.get("denom", {})
@@ -52,6 +53,10 @@ def apply_chain_defaults(chain, defaults):
     chain["grafana"] = chain.get("grafana", {})
     for key, value in defaults["grafana"].items():
         chain["grafana"][key] = chain["grafana"].get(key, value)
+
+    chain["block_explorer"] = chain.get("block_explorer", {})
+    for key, value in defaults["block_explorer"].items():
+        chain["block_explorer"][key] = chain["block_explorer"].get(key, value)
 
     # Apply defaults to participants
     if "participants" not in chain:
