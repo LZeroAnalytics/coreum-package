@@ -316,6 +316,14 @@ chains:
           
           # Jitter represents the variance in latency in ms
           jitter: 0
+
+           # The minimum amout of CPUs the nodes must have, in millicpu/millicore.
+           # CAUTION: This is only available for Kubernetes, and will be ignored for Docker.
+          min_cpu: 500
+
+           # The minimum amount of memory, in megabytes, the nodes must have.
+           # CAUTION: This is only available for Kubernetes, and will be ignored for Docker.
+          min_memory: 512
      
      # Configure the transactions per second (tps) sent
      # Only launched when spammer is included in additional_services

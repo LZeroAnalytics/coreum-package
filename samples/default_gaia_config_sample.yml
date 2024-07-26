@@ -74,6 +74,8 @@ chains:
         staking_amount: 20000000000
         count: 1
         staking: true
+        min_cpu: 500
+        min_memory: 512
     additional_services:
       - prometheus
       - grafana

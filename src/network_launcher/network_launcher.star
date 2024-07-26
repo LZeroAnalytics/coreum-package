@@ -78,7 +78,9 @@ def setup_node(plan, node_name, chain_id, participant, binary, cored_args, confi
                 "api": PortSpec(number=1317, transport_protocol="TCP", wait=None),
                 "p-prof": PortSpec(number=6060, transport_protocol="TCP", wait=None),
                 "prometheus": PortSpec(number=26660, transport_protocol="TCP", wait=None)
-            }
+            },
+            min_cpu = participant["min_cpu"],
+            min_memory = participant["min_memory"]
         )
     )
 

@@ -86,7 +86,9 @@
       "count": 1,
       "staking": true,
       "latency": 0,
-      "jitter": 0
+      "jitter": 0,
+      "min_cpu": 500,
+      "min_memory": 512
     }
   ],
   "spammer": {
