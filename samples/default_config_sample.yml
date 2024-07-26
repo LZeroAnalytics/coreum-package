@@ -86,6 +86,10 @@ chains:
     grafana:
       server_url: ""
 
+    prometheus:
+      server_url: ""
+      base_path: ""
+
     participants:
       - image: tiljordan/coreum-cored:latest
         account_balance: 100000000000

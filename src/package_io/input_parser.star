@@ -24,6 +24,7 @@ def apply_chain_defaults(chain, defaults):
     chain["initial_height"] = chain.get("initial_height", defaults["initial_height"])
     chain["spammer"] = chain.get("spammer", defaults["spammer"])
     chain["grafana"] = chain.get("grafana", defaults["grafana"])
+    chain["prometheus"] = chain.get("prometheus", defaults["prometheus"])
 
     # Nested defaults
     chain["denom"] = chain.get("denom", {})
@@ -43,6 +44,14 @@ def apply_chain_defaults(chain, defaults):
         chain["modules"][module] = chain["modules"].get(module, {})
         for key, value in module_defaults.items():
             chain["modules"][module][key] = chain["modules"][module].get(key, value)
+
+    chain["prometheus"] = chain.get("prometheus", {})
+    for key, value in defaults["grafana"].items():
+        chain["prometheus"][key] = chain["prometheus"].get(key, value)
+
+    chain["grafana"] = chain.get("grafana", {})
+    for key, value in defaults["grafana"].items():
+        chain["grafana"][key] = chain["grafana"].get(key, value)
 
     # Apply defaults to participants
     if "participants" not in chain:

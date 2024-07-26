@@ -5,7 +5,7 @@ MIN_MEMORY = 0
 MAX_MEMORY = 2048
 PROMETHEUS_DEFAULT_SCRAPE_INTERVAL = "5s"
 
-def launch_prometheus(plan, node_names, chain_name):
+def launch_prometheus(plan, node_names, chain_name, server_url, base_path):
     metrics_jobs = []
     for node_name in node_names:
         node_service = plan.get_service(name=node_name)
@@ -20,12 +20,14 @@ def launch_prometheus(plan, node_names, chain_name):
         plan,
         metrics_jobs,
         name="{}-prometheus".format(chain_name),
-        config_template_path="./templates/prometheus.yml.tmpl"
+        config_template_path="./templates/prometheus.yml.tmpl",
+        server_url=server_url,
+        base_path=base_path
     )
 
     return prometheus_url
 
-def run_prometheus(plan, metrics_jobs, name, config_template_path):
+def run_prometheus(plan, metrics_jobs, name, config_template_path, server_url, base_path):
     prometheus_config_template = read_file(src=config_template_path)
 
     prometheus_config_data = {
@@ -65,6 +67,8 @@ def run_prometheus(plan, metrics_jobs, name, config_template_path):
                 "--web.console.libraries=/etc/prometheus/console_libraries",
                 "--web.console.templates=/etc/prometheus/consoles",
                 "--web.enable-lifecycle",
+                "--web.external-url=" + server_url + base_path,
+                "--web.route-prefix=" + base_path
             ],
             min_cpu=MIN_CPU,
             max_cpu=MAX_CPU,
