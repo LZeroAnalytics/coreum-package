@@ -67,7 +67,7 @@ def run_prometheus(plan, metrics_jobs, name, config_template_path, server_url, b
                 "--web.console.libraries=/etc/prometheus/console_libraries",
                 "--web.console.templates=/etc/prometheus/consoles",
                 "--web.enable-lifecycle",
-                "--web.external-url=" + server_url + base_path,
+                "--web.external-url=" + server_url,
                 "--web.route-prefix=" + base_path
             ],
             min_cpu=MIN_CPU,
