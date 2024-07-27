@@ -13,7 +13,7 @@ def launch_bdjuno(plan, chain_name, denom, be_args):
     harusa_service = launch_hasura_service(plan, postgres_service, chain_name)
 
     # Launch big dipper UI block explorer
-    big_dipper_service = launch_big_dipper(plan, chain_name, be_args["harusa_url"], be_args["harusa_ws"], be_args["node_rpc_url"], be_args["image"]. be_args["base_path"])
+    big_dipper_service = launch_big_dipper(plan, chain_name, be_args["harusa_url"], be_args["harusa_ws"], be_args["node_rpc_url"], be_args["image"], be_args["base_path"])
 
     # Launch nginx reverse proxy to access explorer
     launch_nginx(plan, big_dipper_service, harusa_service, first_node, chain_name)
