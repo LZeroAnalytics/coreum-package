@@ -89,7 +89,8 @@
     "harusa_url": "",
     "harusa_ws": "",
     "node_rpc_url": "",
-    "image": "tiljordan/big-dipper-ui:latest"
+    "image": "tiljordan/big-dipper-ui:latest",
+    "base_path": ""
   },
   "participants": [
     {
