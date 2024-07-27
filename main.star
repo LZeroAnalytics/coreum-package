@@ -60,6 +60,8 @@ def run(plan, args):
                 plan.print("Launching {} for chain {}".format(service, chain_name))
                 if service == "prometheus":
                     prometheus_url = service_launchers[service](plan, node_names, chain_name, chain["prometheus"]["server_url"], chain["prometheus"]["base_path"])
+                    if chain["prometheus"]["server_url"] != "" and chain["grafana"]["server_url"] != "":
+                        prometheus_url = chain["prometheus"]["server_url"]
                 elif service == "grafana":
                     service_launchers[service](plan, prometheus_url, chain_name, chain["grafana"]["server_url"])
                 elif service == "faucet":
