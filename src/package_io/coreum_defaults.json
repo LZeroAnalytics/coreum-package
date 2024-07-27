@@ -90,7 +90,7 @@
     "harusa_ws": "",
     "node_rpc_url": "",
     "image": "tiljordan/big-dipper-ui:latest",
-    "base_path": ""
+    "chain_type": "devnet"
   },
   "participants": [
     {

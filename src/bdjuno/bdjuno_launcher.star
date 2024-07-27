@@ -13,7 +13,7 @@ def launch_bdjuno(plan, chain_name, denom, be_args):
     harusa_service = launch_hasura_service(plan, postgres_service, chain_name)
 
     # Launch big dipper UI block explorer
-    big_dipper_service = launch_big_dipper(plan, chain_name, be_args["harusa_url"], be_args["harusa_ws"], be_args["node_rpc_url"], be_args["image"], be_args["base_path"])
+    big_dipper_service = launch_big_dipper(plan, chain_name, be_args["harusa_url"], be_args["harusa_ws"], be_args["node_rpc_url"], be_args["image"], be_args["chain_type"])
 
     # Launch nginx reverse proxy to access explorer
     launch_nginx(plan, big_dipper_service, harusa_service, first_node, chain_name)
@@ -146,18 +146,17 @@ def launch_hasura_service(plan, postgres_service, chain_name):
     return hasura_service
 
 
-def launch_big_dipper(plan,chain_name, harusa_url, harusa_ws, node_rpc_url, image, base_path):
+def launch_big_dipper(plan,chain_name, harusa_url, harusa_ws, node_rpc_url, image, chain_type):
     big_dipper_service = plan.add_service(
         name="{}-big-dipper-service".format(chain_name),
         config=ServiceConfig(
             image=image,
             env_vars={
-                "NEXT_PUBLIC_CHAIN_TYPE": "devnet",
+                "NEXT_PUBLIC_CHAIN_TYPE": chain_type,
                 "PORT": "3000",
                 "NEXT_PUBLIC_GRAPHQL_URL": harusa_url,
                 "NEXT_PUBLIC_GRAPHQL_WS": harusa_ws,
-                "NEXT_PUBLIC_RPC_WEBSOCKET": node_rpc_url,
-                "BASE_PATH": base_path
+                "NEXT_PUBLIC_RPC_WEBSOCKET": node_rpc_url
             },
             ports={
                 "ui": PortSpec(number=3000, transport_protocol="TCP", wait=None)
