@@ -22,7 +22,7 @@ def launch_faucet(plan, chain_name, chain_id, mnemonic, transfer_amount):
     plan.add_service(
         name="{}-faucet".format(chain_name),
         config = ServiceConfig(
-            image = "tiljordan/coreum-faucet:latest",
+            image = "tiljordan/coreum-faucet:prod",
             ports = {
                 "api": PortSpec(number=8090, transport_protocol="TCP", wait=None),
                 "monitoring": PortSpec(number=8091, transport_protocol="TCP", wait=None)
