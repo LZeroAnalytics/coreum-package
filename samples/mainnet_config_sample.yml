@@ -1,0 +1,18 @@
+chains:
+  - name: coreum-mainnet-sample
+    type: coreum
+    chain_id: coreum-mainnet-1
+    denom:
+      name: ucore
+      display: core
+      symbol: ucore
+      description: ucore coin
+      units:
+        - denom: ucore
+          exponent: 0
+        - denom: core
+          exponent: 6
+    additional_services:
+      - prometheus
+      - grafana
+      - faucet
