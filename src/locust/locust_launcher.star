@@ -15,6 +15,14 @@ def launch_locust(plan, node_names, addresses, mnemonics, transactions_per_secon
 
     workload = 0 if transactions_per_second == 0 else (1 / transactions_per_second)
 
+    address_prefix = "devcore"
+    if chain["type"] == "gaia":
+        address_prefix = "cosmos"
+    elif chain_id == "coreum-mainnet-1":
+        address_prefix = "core"
+    elif chain_id == "coreum-testnet-1":
+        address_prefix = "testcore"
+
     locust_runner_data = {
         "Addresses": json.encode(addresses),
         "Mnemonics": json.encode(mnemonics),
@@ -22,7 +30,7 @@ def launch_locust(plan, node_names, addresses, mnemonics, transactions_per_secon
         "APIURLs": json.encode(api_urls),
         "ChainID": chain_id,
         "Denom": chain["denom"]["name"],
-        "Prefix": "cosmos" if chain["type"] == "gaia" else "devcore",
+        "Prefix": address_prefix,
         "MinGasFee": chain["modules"]["feemodel"]["min_gas_price"] * 200000,
         "Workload": workload,
         "Coin": 990 if chain["type"] == "coreum" else 118
