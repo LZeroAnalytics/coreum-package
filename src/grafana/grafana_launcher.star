@@ -1,4 +1,4 @@
-IMAGE_NAME = "grafana/grafana:latest"
+IMAGE_NAME = "grafana/grafana-enterprise:9.4.7"
 
 GRAFANA_DASHBOARDS_DIRPATH_ON_SERVICE = "/var/lib/grafana/dashboards"
 
