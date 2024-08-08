@@ -25,7 +25,7 @@ def launch_postgres_service(plan, chain_name):
 
     # Upload SQL schema files to Kurtosis
     schema_files_artifact = plan.upload_files(
-        src="github.com/CoreumFoundation/bdjuno/database/schema",
+        src="github.com/LZeroAnalytics/bdjuno/database/schema",
         name="{}-schema-files".format(chain_name)
     )
     postgres_service = plan.add_service(
@@ -156,7 +156,8 @@ def launch_big_dipper(plan,chain_name, harusa_url, harusa_ws, node_rpc_url, imag
                 "PORT": "3000",
                 "NEXT_PUBLIC_GRAPHQL_URL": harusa_url,
                 "NEXT_PUBLIC_GRAPHQL_WS": harusa_ws,
-                "NEXT_PUBLIC_RPC_WEBSOCKET": node_rpc_url
+                "NEXT_PUBLIC_RPC_WEBSOCKET": node_rpc_url,
+
             },
             ports={
                 "ui": PortSpec(number=3000, transport_protocol="TCP", wait=None)
