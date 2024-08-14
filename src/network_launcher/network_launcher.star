@@ -98,6 +98,7 @@ def setup_node(plan, node_name, chain_id, participant, binary, cored_args, confi
         setup_faucet(plan, node_name, faucet_data, binary, cored_args)
 
     setup_prometheus(plan, node_name, binary, chain_id)
+    setup_cors(plan, node_name, binary, chain_id)
     node_ip = node_service.ip_address
     return node_id, node_ip
 
@@ -162,6 +163,25 @@ def setup_prometheus(plan, node_name, binary, chain_id):
         service_name=node_name,
         recipe=ExecRecipe(
             command=["/bin/sh", "-c", update_prometheus_command]
+        )
+    )
+
+def setup_cors(plan, node_name, binary, chain_id):
+    if binary == "cored":
+        config_path = "/root/.core/" + chain_id + "/config/config.toml"
+    else:
+        config_path = "/root/.gaia/config/config.toml"
+
+    # Command to update cors_allowed_origins in config.toml
+    update_cors_command = (
+            "sed -i 's|^cors_allowed_origins = \\[\\]|cors_allowed_origins = [\"*\"]|' " + config_path
+    )
+
+    # Execute the command on the specified node
+    plan.exec(
+        service_name=node_name,
+        recipe=ExecRecipe(
+            command=["/bin/sh", "-c", update_cors_command]
         )
     )
 
