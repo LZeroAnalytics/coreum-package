@@ -1,0 +1,47 @@
+#!/bin/sh
+# Variables
+BINARY="{{ .binary }}"
+CONFIG_FOLDER="{{ .config_folder }}"
+GENESIS_FILE_PATH="{{ .genesis_file_path }}"
+MNEMONIC="{{ .mnemonic }}"
+FAUCET_MNEMONIC="{{ .faucet_mnemonic }}"
+KEYRING_FLAGS="{{ .keyring_flags }}"
+RPC_OPTIONS="{{ .rpc_options }}"
+SEED_OPTIONS="{{ .seed_options }}"
+CORED_ARGS="{{ .cored_args }}"
+PROMETHEUS_LISTEN_ADDR="{{ .prometheus_listen_addr }}"
+CORS_ALLOWED_ORIGINS="{{ .cors_allowed_origins }}"
+NODE_ID_FILE="{{ .node_id_file }}"
+START_ARGS="{{ .start_args }}"
+
+# Recover the validator key
+echo -e "${MNEMONIC}\n\n" | ${BINARY} keys add validator --recover ${KEYRING_FLAGS} ${CORED_ARGS}
+
+# Initialize the node
+echo -e "${MNEMONIC}\n\n" | ${BINARY} init validator --recover ${CORED_ARGS} 2>&1 | tee ${NODE_ID_FILE}
+
+# Move the genesis file
+mv -f ${GENESIS_FILE_PATH} ${CONFIG_FOLDER}/genesis.json
+
+# If a faucet mnemonic is provided, recover the faucet key
+if [ -n "${FAUCET_MNEMONIC}" ]; then
+    echo -e "${FAUCET_MNEMONIC}\n\n" | ${BINARY} keys add faucet --recover ${KEYRING_FLAGS} ${CORED_ARGS}
+fi
+
+# Update Prometheus settings in config.toml
+sed -i 's|^prometheus = false|prometheus = true|' ${CONFIG_FOLDER}/config.toml
+sed -i "s|^prometheus_listen_addr = \":26660\"|prometheus_listen_addr = \"${PROMETHEUS_LISTEN_ADDR}\"|" ${CONFIG_FOLDER}/config.toml
+
+# Update CORS settings in config.toml
+sed -i "s|^cors_allowed_origins = \\[\\]|cors_allowed_origins = [\"${CORS_ALLOWED_ORIGINS}\"]|" ${CONFIG_FOLDER}/config.toml
+
+# Set seeds to an empty string in config.toml
+sed -i 's|^seeds = .*|seeds = ""|' ${CONFIG_FOLDER}/config.toml
+
+# Replace max open connections, subscriptions, and broadcast timeout
+sed -i 's/max_open_connections = .*/max_open_connections = 0/' ${CONFIG_FOLDER}/config.toml
+sed -i 's/max_subscriptions_per_client = .*/max_subscriptions_per_client = 100/' ${CONFIG_FOLDER}/config.toml
+sed -i 's/timeout_broadcast_tx_commit = .*/timeout_broadcast_tx_commit = "60s"/' ${CONFIG_FOLDER}/config.toml
+
+# Start the node
+${BINARY} start ${RPC_OPTIONS} ${SEED_OPTIONS} ${START_ARGS}
