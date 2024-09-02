@@ -13,6 +13,11 @@ PROMETHEUS_LISTEN_ADDR="{{ .prometheus_listen_addr }}"
 CORS_ALLOWED_ORIGINS="{{ .cors_allowed_origins }}"
 NODE_ID_FILE="{{ .node_id_file }}"
 START_ARGS="{{ .start_args }}"
+SSL_ENABLED="{{ .ssl_enabled }}"
+
+# Paths for SSL/TLS certificates
+TLS_CERT_FILE="${CONFIG_FOLDER}/cert.crt"
+TLS_KEY_FILE="${CONFIG_FOLDER}/privkey.key"
 
 # Recover the validator key
 echo -e "${MNEMONIC}\n\n" | ${BINARY} keys add validator --recover ${KEYRING_FLAGS} ${CORED_ARGS}
@@ -42,6 +47,15 @@ sed -i 's|^seeds = .*|seeds = ""|' ${CONFIG_FOLDER}/config.toml
 sed -i 's/max_open_connections = .*/max_open_connections = 0/' ${CONFIG_FOLDER}/config.toml
 sed -i 's/max_subscriptions_per_client = .*/max_subscriptions_per_client = 100/' ${CONFIG_FOLDER}/config.toml
 sed -i 's/timeout_broadcast_tx_commit = .*/timeout_broadcast_tx_commit = "60s"/' ${CONFIG_FOLDER}/config.toml
+
+# Set TLS configuration in config.toml if SSL is enabled
+if [ "${SSL_ENABLED}" = "true" ]; then
+    sed -i "s|^tls_cert_file =.*|tls_cert_file = \"${TLS_CERT_FILE}\"|" ${CONFIG_FOLDER}/config.toml
+    sed -i "s|^tls_key_file =.*|tls_key_file = \"${TLS_KEY_FILE}\"|" ${CONFIG_FOLDER}/config.toml
+    echo "SSL is enabled. TLS certificates are configured."
+else
+    echo "SSL is not enabled. Skipping TLS configuration."
+fi
 
 # Start the node
 ${BINARY} start ${RPC_OPTIONS} ${SEED_OPTIONS} ${START_ARGS}

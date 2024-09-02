@@ -32,6 +32,8 @@ def launch_network(plan, genesis_files, parsed_args):
                 node_name = "{}-node-{}".format(chain_name, node_counter)
                 mnemonic = mnemonics[node_counter - 1]
 
+                ssl_enabled = participant.get("ssl", False)
+
                 latency = participant.get("latency", 0)
                 jitter = participant.get("jitter", 0)
                 if latency > 0:
@@ -39,11 +41,11 @@ def launch_network(plan, genesis_files, parsed_args):
 
                 # Start seed node
                 if node_counter == 1:
-                    first_node_id, first_node_ip =  start_node(plan, node_name, netem_enabled, participant, binary, cored_args, start_args, config_folder, genesis_file, mnemonic, faucet_data, True, first_node_id, first_node_ip)
+                    first_node_id, first_node_ip =  start_node(plan, node_name, netem_enabled, participant, binary, cored_args, start_args, config_folder, genesis_file, mnemonic, faucet_data, True, first_node_id, first_node_ip, ssl_enabled)
                     node_info.append({"name": node_name, "node_id": first_node_id, "ip": first_node_ip})
                 else:
                     # Start normal nodes
-                    node_id, node_ip =  start_node(plan, node_name, netem_enabled, participant, binary, cored_args, start_args, config_folder, genesis_file, mnemonic, faucet_data, False, first_node_id, first_node_ip)
+                    node_id, node_ip =  start_node(plan, node_name, netem_enabled, participant, binary, cored_args, start_args, config_folder, genesis_file, mnemonic, faucet_data, False, first_node_id, first_node_ip, ssl_enabled)
                     node_info.append({"name": node_name, "node_id": node_id, "ip": node_ip})
                     # Add network condition for this node
                     network_conditions.append({
@@ -63,7 +65,7 @@ def launch_network(plan, genesis_files, parsed_args):
     plan.print(networks)
     return networks
 
-def start_node(plan, node_name, netem_enabled, participant, binary, cored_args, start_args, config_folder, genesis_file, mnemonic, faucet_data, is_first_node, first_node_id, first_node_ip):
+def start_node(plan, node_name, netem_enabled, participant, binary, cored_args, start_args, config_folder, genesis_file, mnemonic, faucet_data, is_first_node, first_node_id, first_node_ip, ssl_enabled):
 
     # Path where the node ID will be stored
     node_id_file = "/var/tmp/{}.node_id".format(node_name)
@@ -89,7 +91,8 @@ def start_node(plan, node_name, netem_enabled, participant, binary, cored_args, 
         "start_args": start_args,
         "prometheus_listen_addr": "0.0.0.0:26660",
         "cors_allowed_origins": "*",
-        "node_id_file": node_id_file
+        "node_id_file": node_id_file,
+        "ssl_enabled": ssl_enabled,
     }
 
     # Render the start-node.sh script template
@@ -103,11 +106,30 @@ def start_node(plan, node_name, netem_enabled, participant, binary, cored_args, 
         name="{}-start-script".format(node_name)
     )
 
-    # Add genesis file to the node
-    files = {
-        "/tmp/genesis": genesis_file,
-        "/usr/local/bin": start_node_script
-    }
+    if ssl_enabled:
+        cert_file = plan.upload_files(
+            src ="templates/cert.crt",
+            name = "cert.crt",
+        )
+        key_file = plan.upload_files(
+            src ="templates/privkey.key",
+            name = "privkey.key",
+        )
+
+        files = {
+            "/tmp/genesis": genesis_file,
+            "/usr/local/bin": start_node_script,
+            config_folder: Directory(
+                artifact_names=[cert_file, key_file]
+            )
+        }
+    else:
+        files = {
+            "/tmp/genesis": genesis_file,
+            "/usr/local/bin": start_node_script
+        }
+
+
 
     # Launch the node service
     node_service = plan.add_service(

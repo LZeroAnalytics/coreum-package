@@ -7,7 +7,7 @@ def launch_bdjuno(plan, chain_name, denom, be_args):
     )
 
     # Launch the bdjuno service
-    launch_bdjuno_service(plan, postgres_service, first_node, chain_name, denom)
+    launch_bdjuno_service(plan, postgres_service, first_node, chain_name, denom, be_args["node_addr"])
 
     # Launch hasura service
     harusa_service = launch_hasura_service(plan, postgres_service, chain_name)
@@ -16,7 +16,8 @@ def launch_bdjuno(plan, chain_name, denom, be_args):
     big_dipper_service = launch_big_dipper(plan, chain_name, be_args["harusa_url"], be_args["harusa_ws"], be_args["node_rpc_url"], be_args["image"], be_args["chain_type"])
 
     # Launch nginx reverse proxy to access explorer
-    launch_nginx(plan, big_dipper_service, harusa_service, first_node, chain_name)
+    if be_args["node_addr"] == "":
+        launch_nginx(plan, big_dipper_service, harusa_service, first_node, chain_name)
 
     plan.print("BdJuno and Hasura started successfully")
 
@@ -63,15 +64,24 @@ def launch_postgres_service(plan, chain_name):
     return postgres_service
 
 
-def launch_bdjuno_service(plan, postgres_service, node_service, chain_name, denom):
+def launch_bdjuno_service(plan, postgres_service, node_service, chain_name, denom, node_addr):
+
+    node_ip = node_service.ip_address
+    rpc_port = node_service.ports["rpc"].number
+    grpc_port = node_service.ports["grpc"].number
+    rpc_addr = "http://{}:{}".format(node_ip, rpc_port)
+    grpc_addr = "http://{}:{}".format(node_ip, grpc_port)
+    if node_addr != "":
+        rpc_addr = node_addr + "/rpc"
+        grpc_addr = node_addr
+
     # Render the configuration file
     bdjuno_config_data = {
         "ChainPrefix": denom["display"],
-        "NodeIP": node_service.ip_address,
         "PostgresIP": postgres_service.ip_address,
         "PostgresPort": postgres_service.ports["db"].number,
-        "RpcPort": node_service.ports["rpc"].number,
-        "GrpcPort": node_service.ports["grpc"].number
+        "RPCAddr": rpc_addr,
+        "GRPCAddr": grpc_addr
     }
     bdjuno_config_artifact = plan.render_templates(
         config = {
