@@ -24,10 +24,10 @@ node:
     config:
         rpc:
             client_name: juno
-            address: {{ .RPCAddr }}
+            address: http://{{ .NodeIP }}:{{ .RpcPort }}
             max_connections: 20
         grpc:
-            address: {{ .GRPCAddr }}
+            address: http://{{ .NodeIP }}:{{ .GrpcPort }}
             insecure: true
 parsing:
     workers: 20
