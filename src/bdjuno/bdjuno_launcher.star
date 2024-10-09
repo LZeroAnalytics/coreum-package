@@ -115,7 +115,7 @@ def launch_bdjuno_service(plan, postgres_service, node_service, chain_name, deno
     plan.exec(
         service_name = "{}-bdjuno-service".format(chain_name),
         recipe = ExecRecipe(
-            command = ["/bin/sh", "-c", "nohup bdjuno start --home /bdjuno/.bdjuno > /dev/null 2>&1 &"]
+            command = ["/bin/sh", "-c", "nohup bdjuno start --home /bdjuno/.bdjuno > /bdjuno/bdjuno.log 2>&1 &"]
         )
     )
 

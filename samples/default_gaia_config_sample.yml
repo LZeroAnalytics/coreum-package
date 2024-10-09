@@ -79,3 +79,4 @@ chains:
     additional_services:
       - prometheus
       - grafana
+      - faucet
