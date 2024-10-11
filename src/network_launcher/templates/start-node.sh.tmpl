@@ -38,6 +38,9 @@ sed -i "s|^cors_allowed_origins = \\[\\]|cors_allowed_origins = [\"${CORS_ALLOWE
 # Set seeds to an empty string in config.toml
 sed -i 's|^seeds = .*|seeds = ""|' ${CONFIG_FOLDER}/config.toml
 
+# Set pruning to nothing
+sed -i 's|^pruning = "default"|pruning = "nothing"|' ${CONFIG_FOLDER}/app.toml
+
 # Replace max open connections, subscriptions, and broadcast timeout
 sed -i 's/max_open_connections = .*/max_open_connections = 0/' ${CONFIG_FOLDER}/config.toml
 sed -i 's/max_subscriptions_per_client = .*/max_subscriptions_per_client = 100/' ${CONFIG_FOLDER}/config.toml
