@@ -88,6 +88,21 @@ def launch_bdjuno_service(plan, postgres_service, node_service, chain_name, deno
         name = "{}-genesis-file".format(chain_name)
     )
 
+    bdjuno_start_config = {
+        "GenesisFilePath": "/tmp/genesis/genesis.json",
+        "BdjunoHome": "/bdjuno/.bdjuno"
+    }
+
+    bdjuno_start_artifact = plan.render_templates(
+        config = {
+            "start_bdjuno.sh": struct(
+                template = read_file("templates/start_bdjuno.sh.tmpl"),
+                data = bdjuno_start_config
+            )
+        },
+        name="{}-bdjuno-start".format(chain_name)
+    )
+
     bdjuno_service = plan.add_service(
         name = "{}-bdjuno-service".format(chain_name),
         config = ServiceConfig(
@@ -97,25 +112,10 @@ def launch_bdjuno_service(plan, postgres_service, node_service, chain_name, deno
             },
             files = {
                 "/bdjuno/.bdjuno": bdjuno_config_artifact,
-                "/tmp/genesis": genesis_file_artifact
+                "/tmp/genesis": genesis_file_artifact,
+                "/usr/local/bin": bdjuno_start_artifact,
             },
-            cmd = ["tail", "-f", "/dev/null"], # Override the start command
-        )
-    )
-
-    # Parse the genesis file
-    plan.exec(
-        service_name = "{}-bdjuno-service".format(chain_name),
-        recipe = ExecRecipe(
-            command = ["/bin/sh", "-c", "bdjuno parse genesis-file --genesis-file-path /tmp/genesis/genesis.json --home /bdjuno/.bdjuno"]
-        )
-    )
-
-    # Start bdjuno
-    plan.exec(
-        service_name = "{}-bdjuno-service".format(chain_name),
-        recipe = ExecRecipe(
-            command = ["/bin/sh", "-c", "nohup bdjuno start --home /bdjuno/.bdjuno > /bdjuno/bdjuno.log 2>&1 &"]
+            cmd = ["/bin/sh", "/usr/local/bin/start_bdjuno.sh"],
         )
     )
 

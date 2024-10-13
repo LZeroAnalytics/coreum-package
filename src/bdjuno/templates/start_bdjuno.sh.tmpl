@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Set variables
+GENESIS_FILE_PATH="{{ .GenesisFilePath }}"
+BDJUNO_HOME="{{ .BdjunoHome }}"
+
+# Parse the genesis file
+echo "Parsing the genesis file..."
+bdjuno parse genesis-file --genesis-file-path "$GENESIS_FILE_PATH" --home "$BDJUNO_HOME"
+STATUS=$?
+if [ $STATUS -ne 0 ]; then
+  echo "Error: Failed to parse genesis file with status code $STATUS"
+  exit $STATUS
+fi
+
+echo "Genesis file parsed successfully."
+
+# Start bdjuno
+echo "Starting bdjuno..."
+bdjuno start --home "$BDJUNO_HOME"
+STATUS=$?
+if [ $STATUS -ne 0 ]; then
+  echo "Error: Failed to start bdjuno with status code $STATUS"
+  exit $STATUS
+fi
+
+echo "bdjuno service launched successfully."
